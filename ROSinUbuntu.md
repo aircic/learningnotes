@@ -26,7 +26,11 @@ sudo wget -P /etc/X11 https://gist.githubusercontent.com/mangoliou/ba126832f2fb8
 vncserver -kill :1
 vncserver :1
 ```
-
+调整vnc显示分辨率同windows桌面分别率：`vncserver -geometry 1920x1200`
+## ubuntu16.04安装vscode
+1. 从[官网](https://code.visualstudio.com/docs/setup/linux)下载.deb安装文件
+2. 在命令行中运行：`sudo apt install ***.deb`
+3. 安装c/c++插件
 
 ## 网页ubuntu云桌面--Docker-ubuntu-vnc-desktop
 1. 安装docker环境，参考[6]
@@ -204,7 +208,247 @@ cd .. && catkin_make
  * * 
 * 双向消息请求(request)/响应(response)方式的服务(servive)
 
+## [CMakeList.txt语法介绍](https://blog.csdn.net/afei__/article/details/81201039)
+1. 指定cmake的最小版本
+`cmake_minimum_required(VERSION 3.4.1)`
+2. 设置项目名称
+`project(name)`
+这个命令不是强制性的，但最后加上，他会引入两个变量demo_BINARY_DIR和demo_SOURCE_DIR，同时cmake定义两个等价的变量PROJECT_BINARY和PROJECT_SOURCE_DIR。
+3. 设置编译类型
+``` shell
+add_executable(demo demo.cpp) # 生成可执行文件
+add_library(common STATIC util.cpp) # 生成静态库
+add_library(common SHARED util.cpp) # 生成动态库或共享库
+```
+add_library默认生成是静态库，同过上面的命令生成的文件名字
+* 在Linux下为：
+   >demo
+   >libcommon.a
+   >libcommon.so
+* 在Windows下为：
+   >demo.exe
+   >common.lib
+   >common.dll
 
+4. 指定编译包含的源文件
+
+    4.1 明确指定包含哪些文件
+    `add_library(demo demo.cpp test.cpp util.cpp)`
+
+    4.2 搜索所有的cpp文件
+    `aux_source_directory(dir VAR)`发现一个目录下所有的源码文件并将列表存储在一个变量中，
+    ``` cmake
+    aux_source_directory(. SRC_LIST) # 搜索当前目录下所有.cpp文件
+    add_library(demo ${SRC_LIST})
+    ```
+    4.3 自定义搜索规则
+    ``` cmake
+    file(GLOB SRC_LIST "*.cpp" "protocol/*.cpp")
+    add_library(demo ${SRC_LIST})
+    ```
+    或者
+    ``` cmake
+    file(GLOB SRC_LIST "*.cpp")
+    file(GLOB SRC_PROTOCOL_LIST "protocol/*.cpp")
+    add_library(demo ${SRC_LIST} ${SRC_PROTOCOL_LIST})
+    ```
+    或者
+    ``` cmake
+    aux_source_directory(. SRC_LIST)
+    aux_source_directory(protocol SRC_PROTOCOL_LIST)
+    add_library(demo ${SRC_LIST} ${SRC_PROTOCOL_LIST})
+    ```
+5. 查找指定的库文件
+`find_library(VAR name path)`查找到指定的预编译库，并将它的路径存储在变量中。默认的搜索路径为cmake包含的系统库，因此如果是NDK的公共库只需要指定库的name即可。
+``` cmake
+find_library(
+    # Sets the name of the path variable
+    log_lib
+
+    # Specifies the name of the NDK library that 
+    # you want CMake to locate.
+    log
+)
+```
+类似的命令还有find_file(), find_path(), find_program(), find_package()。
+6. 设置包含的目录
+``` cmake
+include_directories(
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_BINARY_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+```
+Linux下还可以通过如下方式设置包含的目录
+`set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -I${CMAKE_CURRENT_SOURCE_DIR})`
+
+7. 设置连接库目录
+``` cmake
+link_directories(
+    ${CMAKE_CURRENT_SOURCE_DIR}/libs
+)
+```
+Linux下还可以通过如下方式设置连接库目录
+`set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -L${CMAKE_CURRENT_SOURCE_DIR}/libs)`
+
+8. 设置target需要连接的库
+
+    在 Windows 下，系统会根据链接库目录，搜索xxx.lib 文件，Linux 下会搜索 xxx.so 或者 xxx.a 文件，如果都存在会优先链接动态库（so后缀）。   
+    ``` cmake
+    target_link_libraries(
+        # 目标库
+        demo
+        # 目标库需要连接的库
+        # log-lib是上面find_library指定的变量名
+        ${log-lib}
+    )
+    ```
+    8.1 指定连接动态库或者静态库
+
+    ``` cmake
+    target_link_directories(demo libface.a)  # 
+    target_link_directories(demo libface.so)
+    ```
+    8.2 指定全路径
+    ``` cmake
+    target_link_libraries(demo ${CMAKE_CURRENT_SOURCE_DIR}/libs/libface.a)
+    target_link_libraries(demo ${CMAKE_CURRENT_SOURCE_DIR}/libs/libface.so)
+    ``` 
+    8.3 指定连接多个库
+    target_link_libraries(demo
+        ${CMAKE_CURRENT_SOURCE_DIR}/libs/libface.a
+        boost_system.a
+        boost_thread
+        pthread
+    )
+9. 设置变量
+    9.1 set直接设置变量的值
+    ``` cmake
+    set(SRC_LIST main.cpp test.cpp)
+    add_executable(demo ${SRC_LIST})
+    ```
+    9.2 set追加设置变量的值
+    ``` cmake
+    set(SRC_LIST main.cpp)
+    set(SRC_LIST ${SRC_LIST} test.cpp)
+    add_executable(demo ${SRC_LIST})
+    ```
+    9.3 list追加或删除变量的值
+    ``` cmake
+    set(SRC_LIST main.cpp)
+    list(APPEND SRC_LIST test.cpp)
+    list(REMOVE_ITEM SRC_LIST main.cpp)
+    add_executable(demo ${SRC_LIST})
+    ```
+10. 常用变量
+    10.1 预定义变量
+    PROJECT_SOURCE_DIR：工程的根目录
+    PROJECT_BINARY_DIR：运行cmake命令的目录，通常是${PROJECT_SOURCE_DIR}/build
+    PROJECT-NAME：返回通过project命令定义的项目名称
+    CMAKE_CURRENT_SOURCE_DIR：当前处理的CMakeLists.txt
+    CMAKE_CURRENT_BINARY_DIR：target编译目录
+    CMAKE_CURRENT_LIST_DIR：CMakeLists.txt的完整路径
+    CMAKE_CURRENT_LIST_LINE：当前所在的行
+    CMAKE_MODULE_PATH：定义自己的cmake模块所在的路径，SET(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)，然后可以用INCLUDE命令来调用自己的模块。
+    EXECUTABLE_OUTPUT_PATH：重新定义目标二进制可执行文件的存放位置
+    LIBRARY_OUTPUT_PATH：重新定义目标链接库文件的存放位置
+
+
+## catkin_make配置CMakeList.txt
+1. `cmake_minimum_required(VERSION 2.8.3)`
+2. `project(ros_tutorials_topic)`
+3. find catkin packages
+``` cmake
+find_package(catkin REQUIRED COMPONENTS 
+    message_generation
+    ros_cpp
+    std_msgs)
+```
+4. generate messages in the 'msg' folder
+``` cmake
+add_message_files(
+    FILES MsgTutorial.msg
+)
+```
+generate added messages and services with any dependencies listed here
+``` cmake
+generate_messages(
+    DEPENDENCIES
+    std_msgs
+)
+```
+5. catkin specific configuration
+**INCLUDE_DIRS**: your package contains header files
+**LIBRARIES**: libraries you create in this project that dependent projects also need
+**CATKIN_DEPENDS**: catkin_packages dependent projects also need
+**DEPENDS**: system dependencies of this project that dependent projects also need
+ message_generation 
+``` cmake
+catkin_package(
+    LIBRARIES ros_tutorial_topic
+    CATKIN_DEPENDS message_generation roscpp std_message
+)
+```
+6. `include_directories(${catkin_INCLUDE_DIRS})`
+7. 
+``` cmake
+add_executable(topic_publisher src/topic_publisher.cpp)
+add_dependencies(topic_publisher ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(topic_publisher ${catkin_LIBRARIES})
+```
+``` cmake
+add_executable(topic_subscriber src/topic_subscriber.cpp)
+add_dependencies(topic_subscriber ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(topic_subscriber ${catkin_LIBRARIES})
+```
+
+## USB Camera(UVC)
+
+## SLAM
+0. 贝叶斯滤波
+基于条件独立状态转移概率
+$$p({\bm{x_t}} | \bm{x_{0:t-1}}, \bm{z_{1:t-1}}, \bm{u_{1:t}}) = p(\bm{x_{t}} | \bm{x_{t-1}}, \bm{u_{t}})$$
+概率$p(\bm{x_{t}} | \bm{x_{t-1}}, \bm{u_{t}})$为状态转移概率，指明环境状态作为机器人控制$\bm{u_t}$的函数如何随着时间变化，即时刻t的状态随机的依赖时刻t-1的状态和时刻t的控制。
+基于条件独立的测量概率
+$$p({\bm{z_t}} | \bm{x_{0:t}}, \bm{z_{1:t-1}}, \bm{u_{1:t}}) = p(\bm{z_{t}} | \bm{x_{t}})$$
+概率$p(\bm{z_{t}} | \bm{x_{t}})$为测量概率，说明测量$\bm{z_t}$只由环境状态$\bm{x_t}$产生，即时刻t的测量sui9ji的依赖时刻t的状态。
+上述状态转移概率和测量概率模型也称为隐马尔科夫模型，或者动态贝叶斯网络。
+**贝叶斯滤波算法**
+贝叶斯滤波是递归的，根据测量和控制数据计算置信度分别$bel()$，算法过程如下：
+$\bm{Algorithm Bayes\_filter}(bel(x_{t-1}), u_t, z_t)$
+$for\ all\ x_t\ do$
+$\quad $ $\overline{bel}(x_t) = \int{p(x_t|u_{t}, x_{t-1})\ bel(x_{t-1})}dx_{t-1}$
+$\quad $ $bel(x_t) = \eta p(z_t | x_t) \overline{bel}(x_t)$
+$end\ for$
+$return\ bel(x_t)$
+公式第3行是预测(prediction)过程，公式第4行是测量更新(measurement update)。
+为了递归的计算后验置信度，算法需要一个时刻$t=0$的初始置信度$bel(x_0)$作为边界条件。如果$x_0$是确定值，$bel(x_0)$应该用一个点式群体分布进行初始化，该点式群体分布将所有概率集中在$x_0$的修正值周围，而其他点的概率为0。如果$x_0$完全忽略，$bel(x_0)$可使用在$x_0$的邻域上的均匀分布来初始化。
+
+
+1. 粒子滤波器(Particle Filter)
+1.1 初始化(initialization)
+如果机器人的起始位姿未知，用N个粒子在所有可能的位姿范围内随机安排机器人的位姿。每个初始粒子的权重为1/N，总和为1，N为经验值，通常为数百。如果机器人的初始位置已知，则将粒子放置在其附近。
+1.2 预测(prediction)
+根据机器人的运动的系统模型(system model)，给被观察到的移动量(odometry, IMU等)加上噪声，用这种方式移动各个粒子。
+1.3 调整(update)
+基于所测量到的传感器信息，计算每个粒子的概率，并且通过反映这个值更新每个粒子的权重值。
+1.4 姿态估计(pose estimation)
+利用所有粒子的位置、方向和权重值来计算加权平均值、中央值和最大权重的粒子值，并用这些估计机器人的姿态。
+1.5 重采样(Resampling)
+这是生成新粒子的过程，去除权重小的粒子，以权重大的粒子为中心创建继承了现有粒子的特性(姿态信息)的新粒子。粒子的总数量保持不变。
+
+2. 蒙特卡洛定位(Monte Carlo Locationlization)
+设机器人在t时刻的位置和方向$(x, y, \theta)$为$\bm{x}_t$, 距离传感器到t时刻为止获得的距离信息记为$z_{0...t} = \{z_0, z_1,\cdots ,z_t\}$，编码器到t时刻为止获得的机器人的运动信息记为$u_{0...t} = \{u_0, u_1, \cdots, u_t\}$。建立机器人传感器模型和移动模型，并通过贝叶斯滤波器获得后验概率。首先，在预测阶段利用机器人的移动模型$p(\bm{x}_t | \bm{x}_{t-1}, \bm{u}_{t-1})$、前一个位置上的概率$bel(\bm{x}_{t-1})$和从编码器获得的运动信息$u$，计算下一个时刻的机器人位置$\overline{bel}$,
+$$\overline{bel}(\bm{x}_t) = \int p(\bm{x}_t | \bm{x}_{t-1}, \bm{u}_{t-1})bel(\bm{x}_{t-1})dtx_{t-1}$$
+在预测阶段，利用传感器模型$p(z_t|x_t)$、上面求得的概率$\overline{bel}(\bm{x}_t)$和归一化常数$\eta_t$，求得基于传感器信息提高准确度的当前位置的概率$bel(\bm{x}_t)$，
+$$bel(\bm{x}_t) = \eta_tp(z_t|x_t)\overline{bel}(\bm{x}_t)$$
+得到当前位置的概率$bel(\bm{x}_t)$后，通过粒子滤波器生成N个粒子来估计位置。在MCL中，使用术语“样品”代替“粒子”。首先，在抽样阶段， 使用前一个位置的概率$bel(x_{t-1})$中的机器人的移动模型$p(\bm{x}_t | \bm{x}_{t-1}, \bm{u}_{t-1})$来提取新的样品集合$x_{t}^{'}$。利用样品集合$x_{t}^{'}$中的第i个样品$x_{t}^{'(i)}$、距离传感器获得的距离信息$z_t$和归一化常数$\eta$来计算权重值$\omega_{t}^{(i)}$,
+$$\omega_{t}^{(i)} = \eta p(z_t | x_{t}^{'(i)})$$
+在重采样过程中，使用样品$x_{t}^{'}$和权重$\omega_{t}^{(i)}$来创建N个新的样品集合$X_t$，
+$$X_t = \{x_{t}^{(j)} | j = 1 \cdots N\} \sim \{x_{t}^{'(i)}, \omega_{t}^{(i)}\}$$
+3. 自适应蒙特卡洛定位
+
+4. 动态窗口法(Dynamic Windows Approach, DWA)
 
 ## USV ROS Simulation
 []
@@ -219,7 +463,9 @@ cd .. && catkin_make
 [6] [Docker--从入门到实践，安装Docker](https://yeasy.gitbooks.io/docker_practice/install/ubuntu.html)
 [7] [usv_gazebo_plugins](https://bitbucket.org/osrf/vrx/wiki/tutorials)
 [8] [ROS(1和2)机器人操作系统相关书籍、资料和学习路径](https://blog.csdn.net/zhangrelay/article/details/78179097)
-[] []()
+[9] Probabilistic Robotics
+[10] udacity中的[Artificial Intelligence for Robotics](https://classroom.udacity.com/courses/cs373/lessons/48739381/concepts/487350240923)
+[] [细说贝叶斯滤波](https://www.cnblogs.com/ycwang16/p/5995702.html?utm_source=itdadao&utm_medium=referral)
 [] []()
 [] []()
 [] []()
