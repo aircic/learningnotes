@@ -450,8 +450,43 @@ $$X_t = \{x_{t}^{(j)} | j = 1 \cdots N\} \sim \{x_{t}^{'(i)}, \omega_{t}^{(i)}\}
 
 4. 动态窗口法(Dynamic Windows Approach, DWA)
 
+## ROS Simulation Introduction
+1. URDF建模
+URDF是以<robot>标签来开始，详细内容中通常会反复交替出现<link>标签和<joint>标签，这两种标签分别用来定义机器人的组件：连杆和关节。其中，为了与ROS-Control共用，通常还包括用于设置关节和电机之间的关系的<transmission>标签。
+1.1 `<link>`标签的属性
+*  `<link>`    设置栏杆的可视化、碰撞和惯性信息
+* `<material>` 描述连杆颜色和纹理等信息，其中颜色使用<color>标签，eg. `<color rgba="0.0 0.0 0.0 1.0"/>`，其中rgba输入的四个数字分别表示红色、绿色、蓝色和透明度。
+* `<collision>`设置碰撞计算的信息，允许输入标量连杆外形范围的几何信息
+* `<visual>`   设置连杆可视化信息
+* `<inertial>` 设置连杆惯性信息
+* `<mass>`     设置连杆的质量（单位：kg）
+* `<inertia>`  设置惯性张量
+* `<origin>`   设置相对与连杆相对坐标系的移动和旋转
+* `<geometry>` 输入模型的形状，如box、cylinder、sphere，也可以导入COLLADA(.dae)、STL(.stl)格式的设计文件
+* `<material>` 
+1.2 `<joint>`标签属性
+* `<joint>`    设置与连杆的关系和关节类型
+* `<paremnt>`  关节的父连杆
+* `<child>`    关节的子连杆
+* `<origin>`   将父连杆的坐标系转化为子连杆的坐标系
+* `<axis>`     设置旋转轴
+* `<limit>`    设置关节的速度(单位rad/s)、力(单位N)和半径(仅当关节是revolute或prismatic时)
+1.3 
+
+
+
+
 ## USV ROS Simulation
 []
+
+
+## Package Dependence
+1. 查看包缺少的依赖
+`rosdep check --from-paths`
+2. 在~/catkin_ws/下安装缺少的依赖
+`rosdep install -r --from-path src --ignore-src`
+[在open_manipulator catkin_cmake出错，缺少依赖解决方法](https://answers.ros.org/question/310452/the-issue-came-by-catkin_make-of-open_manipulator/)
+
 
 
 ## References
