@@ -208,6 +208,9 @@ cd .. && catkin_make
  * * 
 * 双向消息请求(request)/响应(response)方式的服务(servive)
 
+   
+
+
 ## [CMakeList.txt语法介绍](https://blog.csdn.net/afei__/article/details/81201039)
 1. 指定cmake的最小版本
 `cmake_minimum_required(VERSION 3.4.1)`
@@ -402,6 +405,81 @@ add_dependencies(topic_subscriber ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_E
 target_link_libraries(topic_subscriber ${catkin_LIBRARIES})
 ```
 
+## launch文件
+参考
+[ROS探索总结（五十六）--launch文件](http://www.guyuehome.com/2195)
+[ROS wiki roslaunch/XML](http://wiki.ros.org/roslaunch/XML)
+
+1. `<launch>`
+launch文件采用XML形式进行描述，包含一个根元素`<launch>`。
+``` xml
+<launch>
+    ......
+</launch>
+```
+2. `<node>`
+launch文件的核心是启动ROS的节点，采用`<node>`标签定义，一个节点标签最常用的属性：
+pkg="package_name"：表示节点所在的功能包名称；
+type="executable_name"：表示节点的可执行文件名称；
+name="node_name"：表示节点运行的名称，将覆盖节点中init()赋予的名称；
+output="screen"：将节点的标准输出打印到终端屏幕，默认输出为日志文档；
+respawn="true"：复位属性，当该节点停止时，会自动重启，默认为false；
+required="true"：必要属性，当该节点终止时，launch文件中的其他节点也被终止；
+ns="namespace"：命名空间属性，为节点内的相对名称添加命名空间前缀；
+args="arguments"：节点需要的输入参数。
+
+``` xml
+<node pkg="package_name" type="executable_name" name="node_name" />
+```
+3. `<param>`
+launch文件通过`<param>`加载parameter，launch文件执行后，parameter就加载到ROS的参数服务器上。每个活跃的节点都可以通过ros::param::get()接口获取parameter的值，用户也可以在终端中通过rosparam命令获得parameter的值。
+``` xml
+<param name="output_frame" value="odom" />
+```
+运行上面设置的launch文件后，output_frame的值就设为odom，并加载到ROS参数服务器上。如果需要设置的参数比较多，一个一个设置会非常麻烦，ROS提供了另一种方式加载参数--`<rosparam>`:
+``` xml
+<rosparam file=$"(find 2dnav_pr2)/config/costmap_common_params.yaml" command="load" ns="local_costmap" />
+```
+`<rosparam>`将一个yaml格式文件中的全部参数加载到ROS参数服务器中，需要设置“command”属性为“load”，还可以选择命名空间“ns”。
+
+4. `<arg>`
+相当于launch文件内部的局部变量，仅限于launch文件使用，便于launch文件的重构，和ROS节点内部的实现没有关系。
+``` xml
+<arg name="arg_name" default="arg_value" />
+```
+通过命令行给`<arg>`赋值，eg. `roslaunch ros_pkg.launch arg_name:=arv_value`
+
+5. `<include>` 
+`<include>` 标签导入其他roslaunch的XML文件到当前文件范围内，文件的所有内容除了`<master>`标签都将导入到文件内，`<include>`的属性包括：
+`<file>`: 需要导入的文件名称，eg. `<include file="$(find pkg_name)/path/file_name.xml" />`
+子标签包括：`<env>` 和`<arg>` 标签，分别给整个导入文件设置一个环境变量和给导入文件传递参数。
+
+6. `<group>`
+`<group>`标签给节点进行分组，每个组有自己独立的命名空间。`<group>`标签等价于顶层的`<launch>`标签，类似于一个标签容器，也是就是可以在`<group>`内使用任何标签，就像在`<launch>`标签内。
+
+
+## URDF建模
+URDF是以<robot>标签来开始，详细内容中通常会反复交替出现<link>标签和<joint>标签，这两种标签分别用来定义机器人的组件：连杆和关节。其中，为了与ROS-Control共用，通常还包括用于设置关节和电机之间的关系的<transmission>标签。
+1. `<link>`标签的属性
+*  `<link>`    设置栏杆的可视化、碰撞和惯性信息
+* `<material>` 描述连杆颜色和纹理等信息，其中颜色使用<color>标签，eg. `<color rgba="0.0 0.0 0.0 1.0"/>`，其中rgba输入的四个数字分别表示红色、绿色、蓝色和透明度。
+* `<collision>`设置碰撞计算的信息，允许输入标量连杆外形范围的几何信息
+* `<visual>`   设置连杆可视化信息
+* `<inertial>` 设置连杆惯性信息
+* `<mass>`     设置连杆的质量（单位：kg）
+* `<inertia>`  设置惯性张量
+* `<origin>`   设置相对与连杆相对坐标系的移动和旋转
+* `<geometry>` 输入模型的形状，如box、cylinder、sphere，也可以导入COLLADA(.dae)、STL(.stl)格式的设计文件
+* `<material>` 
+2.  `<joint>`标签属性
+* `<joint>`    设置与连杆的关系和关节类型
+* `<paremnt>`  关节的父连杆
+* `<child>`    关节的子连杆
+* `<origin>`   将父连杆的坐标系转化为子连杆的坐标系
+* `<axis>`     设置旋转轴
+* `<limit>`    设置关节的速度(单位rad/s)、力(单位N)和半径(仅当关节是revolute或prismatic时)
+3.  
+
 ## USB Camera(UVC)
 
 ## SLAM
@@ -449,36 +527,6 @@ $$X_t = \{x_{t}^{(j)} | j = 1 \cdots N\} \sim \{x_{t}^{'(i)}, \omega_{t}^{(i)}\}
 3. 自适应蒙特卡洛定位
 
 4. 动态窗口法(Dynamic Windows Approach, DWA)
-
-## ROS Simulation Introduction
-1. URDF建模
-URDF是以<robot>标签来开始，详细内容中通常会反复交替出现<link>标签和<joint>标签，这两种标签分别用来定义机器人的组件：连杆和关节。其中，为了与ROS-Control共用，通常还包括用于设置关节和电机之间的关系的<transmission>标签。
-1.1 `<link>`标签的属性
-*  `<link>`    设置栏杆的可视化、碰撞和惯性信息
-* `<material>` 描述连杆颜色和纹理等信息，其中颜色使用<color>标签，eg. `<color rgba="0.0 0.0 0.0 1.0"/>`，其中rgba输入的四个数字分别表示红色、绿色、蓝色和透明度。
-* `<collision>`设置碰撞计算的信息，允许输入标量连杆外形范围的几何信息
-* `<visual>`   设置连杆可视化信息
-* `<inertial>` 设置连杆惯性信息
-* `<mass>`     设置连杆的质量（单位：kg）
-* `<inertia>`  设置惯性张量
-* `<origin>`   设置相对与连杆相对坐标系的移动和旋转
-* `<geometry>` 输入模型的形状，如box、cylinder、sphere，也可以导入COLLADA(.dae)、STL(.stl)格式的设计文件
-* `<material>` 
-1.2 `<joint>`标签属性
-* `<joint>`    设置与连杆的关系和关节类型
-* `<paremnt>`  关节的父连杆
-* `<child>`    关节的子连杆
-* `<origin>`   将父连杆的坐标系转化为子连杆的坐标系
-* `<axis>`     设置旋转轴
-* `<limit>`    设置关节的速度(单位rad/s)、力(单位N)和半径(仅当关节是revolute或prismatic时)
-1.3 
-
-
-
-
-## USV ROS Simulation
-[]
-
 
 ## Package Dependence
 1. 查看包缺少的依赖
