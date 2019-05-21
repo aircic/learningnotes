@@ -1,3 +1,5 @@
+## 目录
+[toc]
 ## 版本说明
 uubuntu-16.04.6-desktop-amd64
 ros-kinetic
@@ -357,22 +359,36 @@ Linux下还可以通过如下方式设置连接库目录
     LIBRARY_OUTPUT_PATH：重新定义目标链接库文件的存放位置
 
 
-## catkin_make配置CMakeList.txt
+## [catkin_make配置CMakeList.txt](http://wiki.ros.org/catkin/CMakeLists.txt)
 1. `cmake_minimum_required(VERSION 2.8.3)`
 2. `project(ros_tutorials_topic)`
-3. find catkin packages
+3. `find_package()`
+找到build时依赖的其他CMake包，并为找到的包创建CMake环境变量，这些环境变量描述了这些包导出的头文件、源文件和依赖的库的位置，可以在后面的CMake脚本中使用。这些环境变量命名规则为`<PACKAGE_NAME>_<PROPERTY>`:
+* `<PACKAGE_NAME>_FOUND`：如果包/库找到了，则设置为true，否则设置为false
+* `<PACKAGE_NAME>_INCLUDE_DIRS`或者`<PACKAGE_NAME>_INCLUDES`：包输出的的include路径
+* `<PACKAGE_NAME>_LIBRARIES`或者`<PACKAGE_NAME>_LIBS`：包输出的libraries
+* `<PACKAGE_NAME>_`
 ``` cmake
 find_package(catkin REQUIRED COMPONENTS 
     message_generation
     ros_cpp
     std_msgs)
 ```
-4. generate messages in the 'msg' folder
+
+
+4. messages, services, and action
+Messages (.msg), services (.srv), and actions (.action) files in ROS require a special preprocessor build step before being built and used by ROS packages. The point of these macros is to generate programming language-specific files so that one can utilize messages, services, and actions in their programming language of choice. The build system will generate bindings using all available generators (e.g. gencpp, genpy, genlisp, etc).
+处理messages, services, 和action的三个宏函数为
+* add_message_files()
+* add_service_files()
+* add_action_files()
 ``` cmake
 add_message_files(
     FILES MsgTutorial.msg
 )
 ```
+这些宏函数后面紧跟着generate_messages()。
+
 generate added messages and services with any dependencies listed here
 ``` cmake
 generate_messages(
@@ -384,7 +400,8 @@ generate_messages(
 **INCLUDE_DIRS**: your package contains header files
 **LIBRARIES**: libraries you create in this project that dependent projects also need
 **CATKIN_DEPENDS**: catkin_packages dependent projects also need
-**DEPENDS**: system dependencies of this project that dependent projects also need
+**DEPENDS**: non-catkin CMake projects that this project depends on
+**CFG_EXTRAS**：additional configuration options
  message_generation 
 ``` cmake
 catkin_package(
@@ -392,18 +409,49 @@ catkin_package(
     CATKIN_DEPENDS message_generation roscpp std_message
 )
 ```
-6. `include_directories(${catkin_INCLUDE_DIRS})`
-7. 
+6. include paths and library paths
+`include_directories(${catkin_INCLUDE_DIRS})`: where can header files be found for the code (most common in C/C++) being build.
+`link_directories()`: where are libraries located that executable target build against
+7. executable targets, library targets and target_link_libraries
+`add_executable()`：指明会build一个可执行目标
+`add_library(${PROJECT_NAME} ${${PROJECT_NAME}_SRC})`：指明哪些库加入到build
+`target_link_libraries()`：指明可执行目标连接依赖的库，通常放在add_executable后面
 ``` cmake
 add_executable(topic_publisher src/topic_publisher.cpp)
 add_dependencies(topic_publisher ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(topic_publisher ${catkin_LIBRARIES})
 ```
-``` cmake
-add_executable(topic_subscriber src/topic_subscriber.cpp)
-add_dependencies(topic_subscriber ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(topic_subscriber ${catkin_LIBRARIES})
+
+## [package文件](http://wiki.ros.org/catkin/package.xml)
+1. 根标签`<package>`
+``` xml
+<package>
+    ...
+</package>
+
 ```
+2. 必需的标签
+* `<name>`：package的名字
+* `<version>`：package版本号，由“.”分割的三个整数构成
+* `<description>`：package内容描述
+* `<maintainer>`：package的维护人
+* `<license>`：软件许可证，如GPL，BSD，ASL
+3. package依赖
+* `<build_depend>`：指明package build时需要的依赖
+* `<build_export_depend>`：指明根据package构建库时需要的依赖
+* `<exec_depend>`：指明哪些依赖需要在package中运行代码
+* `<test_depend>`：指明仅在单元测试时需要的额外依赖
+* `<buildtool_depend>`：指明build package时需要哪些build系统工具，通常只需要caktin
+* `<doc_depend>`：指明package生成文档需要的文档工具
+4. metapackages
+metapackage可以将多个packages组成一个逻辑上的package。metapackage也是一个标准的package，由`<export>`标签修饰
+``` xml
+<export>
+    <metapackage />
+</export>
+```
+除了必需的`<buildtool_depend>`依赖，metapackage仅可以有组合package的`<exec_depend>`依赖。
+
 
 ## launch文件
 参考
@@ -459,10 +507,10 @@ launch文件通过`<param>`加载parameter，launch文件执行后，parameter�
 
 
 ## URDF建模
-URDF是以<robot>标签来开始，详细内容中通常会反复交替出现<link>标签和<joint>标签，这两种标签分别用来定义机器人的组件：连杆和关节。其中，为了与ROS-Control共用，通常还包括用于设置关节和电机之间的关系的<transmission>标签。
+URDF是以`<robot>`标签来开始，详细内容中通常会反复交替出现`<link>`标签和`<joint>`标签，这两种标签分别用来定义机器人的组件：连杆和关节。其中，为了与ROS-Control共用，通常还包括用于设置关节和电机之间的关系的`<transmission>`标签。
 1. `<link>`标签的属性
 *  `<link>`    设置栏杆的可视化、碰撞和惯性信息
-* `<material>` 描述连杆颜色和纹理等信息，其中颜色使用<color>标签，eg. `<color rgba="0.0 0.0 0.0 1.0"/>`，其中rgba输入的四个数字分别表示红色、绿色、蓝色和透明度。
+* `<material>` 描述连杆颜色和纹理等信息，其中颜色使用`<color>`标签，eg. `<color rgba="0.0 0.0 0.0 1.0"/>`，其中rgba输入的四个数字分别表示红色、绿色、蓝色和透明度。
 * `<collision>`设置碰撞计算的信息，允许输入标量连杆外形范围的几何信息
 * `<visual>`   设置连杆可视化信息
 * `<inertial>` 设置连杆惯性信息
@@ -479,6 +527,9 @@ URDF是以<robot>标签来开始，详细内容中通常会反复交替出现<li
 * `<axis>`     设置旋转轴
 * `<limit>`    设置关节的速度(单位rad/s)、力(单位N)和半径(仅当关节是revolute或prismatic时)
 3.  
+
+## xacro
+[xacro](http://wiki.ros.org/xacro)是一种XML的宏语言，通过xacro可以构建更短更易读的XML文件
 
 ## USB Camera(UVC)
 
