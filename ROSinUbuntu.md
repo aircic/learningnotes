@@ -421,7 +421,44 @@ add_executable(topic_publisher src/topic_publisher.cpp)
 add_dependencies(topic_publisher ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(topic_publisher ${catkin_LIBRARIES})
 ```
-
+8. install
+If you want to install targets to the system instead of the devel space of catkin workspace, you can do a "make install" of your code, so that it can be used by others or to a local folder to test a system-level installation.
+This is done using the CMake install() function which takes as arguments:
+* TARGETS - which targets to install
+* ARCHIVE DESTINATION - static libraries and DLL .lib stubs
+* LIBRARY DESTINATION - non-DLL shared libraries and modules
+* RUNTIME DESTINATION - Executable targets and DLL style shared libraries
+``` cmake
+install(TARGETS ${PROJECT_NAME}
+    ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
+```
+Besides these standard destination some files must be installed to special folders, i.e. a library containing Python bindings must be installed to a different folder to be importable in Python:
+``` cmake
+install(TARGETS python_module_library
+    ARCHIVE DESTINATION ${CATKIN_PACKAGE_PYTHON_DESTINATION}
+    LIBRARY DESTINATION ${CATKIN_PACKAGE_PYTHON_DESTINATION})
+```
+8.1 Installing Python Excutable Scripts
+For Python code, the install rule looks different as there is no use of the add_library() and add_executable() functions so as for CMake to determine which files are targets and what type of targets they are. Instead, use the following in your CMakeLists.txt file:
+``` cmake
+catkin_install_python(PROGRAMS scripts/myscript
+    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
+```
+8.2 installing header files
+``` cmake
+install(DIRECTORY include/${PROJECT_NAME}/
+    DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+    PATTERN ".svn" EXCLUDE)
+```
+8.3 Installing roslaunch files
+``` cmake
+install(DIRECTORY launch/
+    DESTINATION ${CATKIN_GLOBAL_SHARE_DESTINATION}/launch
+    PATTERN ".svn" EXCLUDE
+    )
+```
 ## [package文件](http://wiki.ros.org/catkin/package.xml)
 1. 根标签`<package>`
 ``` xml
@@ -507,18 +544,33 @@ launch文件通过`<param>`加载parameter，launch文件执行后，parameter�
 
 
 ## URDF建模
+[ROS urdf/Tutorials](http://wiki.ros.org/urdf/Tutorials)
+[ROS URDF/XML](http://wiki.ros.org/urdf/XML)
+[URDF文件解析](https://blog.csdn.net/Kalenee/article/details/86485565)
 URDF是以`<robot>`标签来开始，详细内容中通常会反复交替出现`<link>`标签和`<joint>`标签，这两种标签分别用来定义机器人的组件：连杆和关节。其中，为了与ROS-Control共用，通常还包括用于设置关节和电机之间的关系的`<transmission>`标签。
 1. `<link>`标签的属性
 *  `<link>`    设置栏杆的可视化、碰撞和惯性信息
-* `<material>` 描述连杆颜色和纹理等信息，其中颜色使用`<color>`标签，eg. `<color rgba="0.0 0.0 0.0 1.0"/>`，其中rgba输入的四个数字分别表示红色、绿色、蓝色和透明度。
-* `<collision>`设置碰撞计算的信息，允许输入标量连杆外形范围的几何信息
-* `<visual>`   设置连杆可视化信息
-* `<inertial>` 设置连杆惯性信息
+    * `<inertial>`  （可选）设置连杆惯性信息
+        * `<origin>`   设置惯性参考系相对于连杆参考系的位姿，惯性参考系的原点在重心处。
+            * xyz 表示x，y，z方向的偏置，默认为0。
+            * rpy 表示横滚角、俯仰角、航向角，单位（rad）。
+        * `<mass>`     设置连杆的质量（单位：kg）
+        * `<inertia>`  设置惯性张量，惯性张量为3x3的对称矩阵，通过上三角形元素ixx，ixy，ixz，iyy，iyz，izz来表示。
+    * `<visual>`    设置连杆可视化信息
+        * `<origin>`   设置可视元素的参考系相对于连杆参考系的位姿。
+            * xyz 表示x，y，z方向的偏置，默认为0。
+            * rpy 表示横滚角、俯仰角、航向角，单位（rad）。
+        * `<geometry>` 输入模型的形状，如
+            * box 通过size设置立方体的三边长度，立方体的原点在中心。
+            * cylinder 通过radius和length设置圆柱体的半径和高度，圆柱体的原点在中心。
+            * sphere 通过radius设置球的半径，球的原点在中心。
+            * mesh 通过filename获取网格文件，文件格式推荐使用COLLADA(.dae)，STL(.stl)格式也可以使用，通过scale设置缩放比例。
+    * `<collision>` 设置碰撞计算的信息，允许输入标量连杆外形范围的几何信息
 * `<mass>`     设置连杆的质量（单位：kg）
 * `<inertia>`  设置惯性张量
 * `<origin>`   设置相对与连杆相对坐标系的移动和旋转
 * `<geometry>` 输入模型的形状，如box、cylinder、sphere，也可以导入COLLADA(.dae)、STL(.stl)格式的设计文件
-* `<material>` 
+* `<material>` 描述连杆颜色和纹理等信息，其中颜色使用`<color>`标签，eg. `<color rgba="0.0 0.0 0.0 1.0"/>`，其中rgba输入的四个数字分别表示红色、绿色、蓝色和透明度。
 2.  `<joint>`标签属性
 * `<joint>`    设置与连杆的关系和关节类型
 * `<paremnt>`  关节的父连杆
@@ -527,9 +579,31 @@ URDF是以`<robot>`标签来开始，详细内容中通常会反复交替出现`
 * `<axis>`     设置旋转轴
 * `<limit>`    设置关节的速度(单位rad/s)、力(单位N)和半径(仅当关节是revolute或prismatic时)
 3.  
+* `<gazebo>`      描述仿真属性，比如阻尼、摩擦等
+* `<model>`       描述机器人结构的运动学和动力学属性
+* `<model_state>` 描述在某一时间的model状态
+* `<sensor>`      描述传感器，比如相机、激光雷达
 
 ## xacro
 [xacro](http://wiki.ros.org/xacro)是一种XML的宏语言，通过xacro可以构建更短更易读的XML文件
+### [check xacro syntax](https://answers.ros.org/question/9208/how-to-check-xacro-syntax-like-check_urdf/)
+``` shell
+xacro --inorder file.acro | check_urdf -
+```
+``` shell
+xacro --inorder file.acro > temp.urdf && check_urdf temp.urdf && rm temp.urdf
+```
+``` shell
+check_urdf < (xacro --inorder file.acro)
+```
+
+## problems
+1. "Package [] does not have a path"
+出现这个问题，可能是因为`<mesh filename="package://your_package/meshes/file.DAE"/>`中yourpackage的路径设置有问题，或者没有启动相应的setup.bash。
+
+
+
+
 
 ## USB Camera(UVC)
 
