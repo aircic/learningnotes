@@ -210,8 +210,153 @@ cd .. && catkin_make
  * * 
 * 双向消息请求(request)/响应(response)方式的服务(servive)
 
-   
+#### 常见消息格式
+* [std_msgs/Header.mgs](http://docs.ros.org/api/std_msgs/html/msg/Header.html)
+``` msg
+# Standard metadata for higher-level stamped data types.
+# This is generally used to communicate timestamped data 
+# in a particular coordinate frame.
+# 
+# sequence ID: consecutively increasing ID 
+uint32 seq
+#Two-integer timestamp that is expressed as:
+# * stamp.sec: seconds (stamp_secs) since epoch (in Python the variable is called 'secs')
+# * stamp.nsec: nanoseconds since stamp_secs (in Python the variable is called 'nsecs')
+# time-handling sugar is provided by the client library
+time stamp
+#Frame this data is associated with
+string frame_id
+```
+* [std_msgs/Float64.msg](http://docs.ros.org/api/std_msgs/html/msg/Float64.html)
+``` msg
+float64 data
+```
+* [geometery_msgs/Point.msg](http://docs.ros.org/api/geometry_msgs/html/msg/Point.html)
+``` msg
+# This contains the position of a point in free space.
 
+float64 x
+float64 y
+float64 z
+```
+* [geometry_msgs/Quaternion.msg](http://docs.ros.org/api/geometry_msgs/html/msg/Quaternion.html)
+``` msg
+# This represents an orientation in free space in quaternion form.
+
+float64 x
+float64 y
+float64 z
+float64 w
+```
+* [geometry_msgs/Pose.msg](http://docs.ros.org/api/geometry_msgs/html/msg/Pose.html)
+``` msg
+# A representation of pose in free space, composed of position and origentation.
+
+Point position
+Quaternion orientation
+```
+* [geometry_msgs/Twist.msg](http://docs.ros.org/api/geometry_msgs/html/msg/Twist.html)
+``` msg
+# This expresses velocity in free sapce broken into its linear and angular parts.
+
+geometry_msgs/Vector3 linear
+geometry_msgs/Vector3 angular
+```
+* [geometry_msgs/Vector3.msg](http://docs.ros.org/api/geometry_msgs/html/msg/Vector3.html)
+``` msg
+# This represents a vector in free sapce.
+# It is only meant to represent a direction. Therefore, it does not
+# make sense to apply a translation to it (e.g. when applying a generic 
+# rigid transformation to a Vector3, tf2 will only apply the rotation).
+# If you want your data to be translatable too, use the 
+# geometry_msgs/Point message instead.
+
+float64 x
+float64 y
+float64 z
+```
+* [geometry_msgs/PoseWithCovariance.msg](http://docs.ros.org/api/geometry_msgs/html/msg/PoseWithCovariance.html)
+``` msg
+# This represents a pose in free space with uncertainty.
+
+Pose pose
+
+# Row-major representation fo the 6x6 covariance matrix.
+# The orientation parameters use a fixed-axis representation.
+# In order, th parameters are:
+# (x, y, z, rotation about X axis, rotation about Y axis, rotation about Z axis)
+float64[36] covariance
+```
+* [geometry_msgs/TwistWithCovariance.msg](http://docs.ros.org/api/geometry_msgs/html/msg/TwistWithCovariance.html)
+``` msg
+# This expresses velocity in free space with uncertainty.
+
+geometry_msgs/Twist twist
+
+# Row-major representation of the 6x6 covariance matrix
+# The orientation parameters use a fixed-axis representation.
+# In order, the parameters are:
+# (x, y, z, rotation about X axis, rotation about Y axis, rotation about Z axis)
+float64[36] covariance
+```
+* [geometry_msgs/Transform.msg](http://docs.ros.org/api/geometry_msgs/html/msg/Transform.html)
+``` msg
+# This represents the transform between two coordinate frames in free space.
+Vector3 translation
+Quaternion rotation
+```
+* [geometry_msgs/TransformStamped.msg](http://docs.ros.org/api/geometry_msgs/html/msg/TransformStamped.html)
+``` msg
+# This expresses a transform from coordinate frame header.frame_id
+# to the coordiate frame child_frame_id
+
+# This message is mostly used by tf package.
+# See its documentation for more information
+
+std_msgs/Header header
+string child_frame_id  # the frame id of the child frame
+geometry_msgs/Transform transform
+
+```
+* [tf2_msgs/TFMessage.msg](http://docs.ros.org/api/tf2_msgs/html/msg/TFMessage.html)
+``` msg
+geometry_msgs/TransformStamped[] transforms
+```
+* [sensor_msgs/JointState.msg](http://docs.ros.org/api/sensor_msgs/html/msg/JointState.html)
+``` msg
+# This is a message that holds data to describ the state of a set of torque controlled joints.
+
+# The state of each joint (revolute or prismatic) is defined by:
+#  * the position of the joint (rad or m),
+#  * the velocity of the joint (rad/s or m/s),
+#  * the effort that is applied in the joint (Nm or N).
+
+# Each joint is uniquely identified by its name.
+# The header specifies the time at which the joint states were recorded. All the joint states 
+# in one message have to be recorded at the same time.
+# The message consists of a multiple arrays, one for each part of the joint state.
+# The goal is to make each of the fields optional. When e.g. your joints have no 
+# effort associated with them, you can leave the effort array empty.
+# All arrays in this message should have the same size, or be empty.
+# This is the only way to uniquely associate the joint name with the correct states.
+
+std_msgs/Header header
+string[] name
+float64[] position
+float64[] velocity
+float64[] effort
+```
+* [nav_msgs/Odometry](http://docs.ros.org/api/nav_msgs/html/msg/Odometry.html)
+``` msg
+# This represents an estimate of a position and velocity in free space.
+# The pose in this message should be specified in the coordinate frame given by header.frame_id.
+# The twist in this message should be specified in the coordinate frame given by the child_frame_id.
+
+std_msgs/Header header
+string child_frame_id
+geometry_msgs/PoseWithCovariance pose
+geometry_msgs/TwistWithCovariance twist
+```
 
 ## [CMakeList.txt语法介绍](https://blog.csdn.net/afei__/article/details/81201039)
 1. 指定cmake的最小版本
@@ -452,13 +597,33 @@ install(DIRECTORY include/${PROJECT_NAME}/
     DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
     PATTERN ".svn" EXCLUDE)
 ```
-8.3 Installing roslaunch files
+8.3 Installing roslaunch files or other Resources
 ``` cmake
 install(DIRECTORY launch/
     DESTINATION ${CATKIN_GLOBAL_SHARE_DESTINATION}/launch
     PATTERN ".svn" EXCLUDE
     )
 ```
+## [catkin_make](http://wiki.ros.org/catkin/commands/catkin_make)和[catkin_make_isolated](http://www.ros.org/reps/rep-0134.html)
+You should always call `catkin_make` in the root of your catkin workspace, assuming your catkin workspace is in ~/catkin_ws:
+``` shell
+cd ~/catkin_ws
+catkin_make
+```
+The above command will build any packages located in ~/catkin_ws/src. The equivalent commands to do this manually would be:
+``` shell
+cd ~/catkin_ws
+cd src
+catkin_init_workspace
+cd ..
+mkdir build
+cd build
+cmake ../src -DCMAKE_INSTALL_PREFIX=../install -DCATKIN_DEVEL_PREFIX=../devel
+make
+```
+After running `catkin_make`, you should notice two new folders in the root of your catkin workspace: the *build* and *devel* folders.The *build* folder is where `cmake` and `make` are invoked, and the *devel* folder contains any generated files and targets, plus setup.*sh files so that you can use it like it is installed.
+`catkin_make install` would generate *install* folder in the root of your workspace. This is a FHS compliant installatin of all of the packages in your catkin workspace. It contains setup.*sh files which can be sourced, allowing you to utilize the packages your built.
+`catkin_make_isolated` builds each package in the workspace individually, calling cmake, make and possibly make install for each catkin package. This is opposed to how catkin workspaces are normally built, with one invocation of CMake which generates a single Make target for all packages in the workspace.
 ## [package文件](http://wiki.ros.org/catkin/package.xml)
 1. 根标签`<package>`
 ``` xml
@@ -596,6 +761,73 @@ xacro --inorder file.acro > temp.urdf && check_urdf temp.urdf && rm temp.urdf
 ``` shell
 check_urdf < (xacro --inorder file.acro)
 ```
+
+## [Parameter Server](http://wiki.ros.org/Parameter%20Server)
+参数服务器存储全局可见的系统状态配置参数，方便节点在运行时存储和配置所需参数。参数服务器使用XMLRPC实现，运行在Master节点中，通过XMLRPC库获取参数调用API。
+1. parameters
+参数使用ROS的标准命名规则，采用层级结构匹配话题和节点的命名空间，来避免参数名称冲突。层级结构使参数可以单独获取，比如
+``` xmlrpc
+/camera/left/name : leftcamera
+/camera/left/exposure: 1
+/camera/right/name: rightcamera
+/camera/right/exposure: 1.1
+```
+上面参数camera是一个字典
+`{left: {name: leftcamera, exposure: 1}, right: {name: rightcamera, exposure: 1}}`
+2. parameter types
+参数服务器使用xmlrpc数据类型，包括
+```
+32-bit integers
+boolens
+strings
+doubles
+iso8601 dates
+lists
+base64-encoded binary data
+```
+当然可以在参数服务器上存储`directory`，参数服务器将ROS的命名空间(namespace)表示成字典。
+```
+/gains/P = 10.0
+/gains/I = 1.0
+/gains/D = 0.1
+```
+对于上面参数，如果检索/gains/P，返回10.0，如果检索/gains，则返回一个字典
+`{'P': 10.0, 'I': 1.0, 'D': 0.1}`
+3. [rosparam](http://wiki.ros.org/rosparam)
+rosparam命令行工具使用YAML文件获取和设置参数服务器上的参数，rosparam也可以在launch文件中被调用。
+支持的命令如下：
+```
+rosparam set    set parameter
+rosparam get    get parameter
+rosparam load   load parameters from file
+rosparam dump   dump parameters to file
+rosparam delete delete parameter
+rosparam list   list parameter names
+```
+4. [roscpp's parameter API](http://wiki.ros.org/roscpp/Overview/Parameter%20Server)
+roscpp有两种不同的参数API：“bare”版用于ros::param命名空间，“handle”版通过[ros::NodeHandle](http://wiki.ros.org/roscpp/Overview/NodeHandles)调用。
+4.1 Getting Parameters
+`ros::param::get()`
+`ros::NodeHandle::getParam()`
+
+4.2 Setting Parameters
+`ros::param::set()`
+`ros::NodeHandle::setParam()`
+5. [rospy's parameter API](http://wiki.ros.org/rospy/Overview/Parameter%20Server)
+`rospy.get_param()`
+`rospy.set_param()`
+
+
+## [roscpp](http://wiki.ros.org/roscpp/Tutorials)
+
+## [rospy](http://wiki.ros.org/rospy/Tutorials)
+
+## [topic_tools/relay](http://wiki.ros.org/topic_tools/relay)
+relay是ROS的一个节点，属于topic_tools包的一部分，它订阅一个话题并将收到的数据再发布给另一个话题，使用规范：
+`relay <intopic> [outtopic]`
+Subscribe to `<intopic>`and republish to another topic.
+* intopic: Incoming topic to subscribe to
+* outtopic: Outgoing topic to publish on (default: intopic_relay)
 
 ## problems
 1. "Package [] does not have a path"

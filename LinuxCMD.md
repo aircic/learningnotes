@@ -53,14 +53,34 @@ apt | Advanced package tool（Debian或基于Debian的发行版中提供）
 #[Linux 命令大全](http://www.runoob.com/linux/linux-command-manual.html)
 
 
-## Linux命令行快捷键
+## [Linux命令行快捷键](https://www.cnblogs.com/webzhangnan/p/3221410.html)
+###移动光标
 CMD  | 功能说明
 ---- | ---------
 ctrl+a | 将光标移动到行开头
 ctrl+e | 将光标移动到行结尾
+alt+f | 光标向前移动一个单词
+alt+b | 光标向后移动一个单词
+ctrl+f | 光标向前移动一个字符
+ctrl+b | 光标向后移动一个字符
+esc+b | 光标移动到当前单词的开头
+esc+f | 光标移动到当前单词的结尾
+###屏幕操作
+CMD  | 功能说明
+---- | ---------
+ctrl+u | 向上滚动半屏
+ctrl+d | 向下滚动半瓶
+ctrl+l | 清屏，同命令clear
+###剪切、删除、粘贴
+CMD  | 功能说明
+---- | ---------
 ctrl+u | 删除光标到行开头的内容
 ctrl+k | 删除光标到行结尾的内容
-
+###鼠标操作
+CMD  | 功能说明
+---- | ---------
+左击并拖动鼠标 | 选择并拷贝文本到剪切板
+鼠标中键 | 粘贴剪切板的内容
 
 ## shell
 0. shell文件约定首行以`#!`开头，表明解释shell脚本的解释器的具体位置，比如， `#!/usr/bin/env bash`
