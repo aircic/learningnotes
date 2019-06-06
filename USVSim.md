@@ -196,22 +196,22 @@ XML文件描述普通情景和仿真参数，URDF描述机器人。一个场景X
 `rosrun uwsim uwsim --configfile path/to/yourscene.xml`
 #### XML语法
 UWSim场景XML文件可以分成几块，每块定义不同方面的场景：
-* oceanState：配置海洋参数，定义水的特性，通过osgOcean实现从平静的蓝色海洋到波涛汹涌的大浪。
-> * windx,windy: X and Y wind force.
-> * windSpeed: Wind speed. Will affect to the amount and height of waves.
-> * depth: Sets the ocean's meters height.
-> * reflectionDamping: Amount of water reflexed light.
-> * waveScale: This parameter decides the wave height, 1e-7 is a reasonable value.
-> * isNotChoppy: Set the waves to be choppy.
-> * choppyFactor: How choppy the waves are.
-> * crestFoamHeight: How high the waves need to be before foam forms on the crest.
-> * oceanSurfaceHeight: Z position of the ocean surface in world coordinates.
-> * fog: Determines underwater visibility.
->   * * density: Underwater fog density, modifies particle number and visibility.
->   * * color: Underwater fog color (RGB parameters).
-> * color: Set the water color (RGB parameters).
-> * attenuation: Changes underwater light behaviour.
-* simParams：调整仿真器的设置，例如着色、分辨率或物理参数等。这部分中所有标签都可选的，除了showTrajectory，如果标签没有给定值，将采用默认值。
+* **oceanState**：配置海洋参数，定义水的特性，通过osgOcean实现从平静的蓝色海洋到波涛汹涌的大浪。
+> * **windx,windy**: X and Y wind force.
+> * **windSpeed**: Wind speed. Will affect to the amount and height of waves.
+> * **depth**: Sets the ocean's meters height.
+> * **reflectionDamping**: Amount of water reflexed light.
+> * **waveScale**: This parameter decides the wave height, 1e-7 is a reasonable value.
+> * **isNotChoppy**: Set the waves to be choppy.
+> * **choppyFactor**: How choppy the waves are.
+> * **crestFoamHeight**: How high the waves need to be before foam forms on the crest.
+> * **oceanSurfaceHeight**: Z position of the ocean surface in world coordinates.
+> * **fog**: Determines underwater visibility.
+>   * **density**: Underwater fog density, modifies particle number and visibility.
+>   * **color**: Underwater fog color (RGB parameters).
+> * **color**: Set the water color (RGB parameters).
+> * **attenuation**: Changes underwater light behaviour.
+* **simParams**：调整仿真器的设置，例如着色、分辨率或物理参数等。这部分中所有标签都可选的，除了**showTrajectory**，如果标签没有给定值，将采用默认值。
 > * **disableShaders**: Disable osgOcean shaders, visual performance may increase but visually quality will get drastically worse. Fixes segmentation fault when graphic card is not able to use shaders.
 > * **resw,resh**: Initial window resolution of the scene.
 > * **offsetp,offsetr**: World coordinates (position and rotation) offset. It moves the virtual zero pose of the scene. Requires (x,y,z) parameters.
@@ -221,14 +221,107 @@ UWSim场景XML文件可以分成几块，每块定义不同方面的场景：
 > * **physicsSubSteps**: In case the framerate is lower than 60, a max number of physics calculation steps to be done. 0 (default) for automatic number of substeps.
 > * **physicsSolver**: Solver used in bullet engine, to know: Dantzig (default), SolveProjectedGauss, SequentialImpulse.
 > * **showTrajectory** Draws the trajectory of a vehicle, object or vehicle part in the simulator. Pressing 't' will show/hide trajectory, although it will keep drawing even in hidden state.
-> * * **target** Name of the vehicle, object or vehicle part to draw trajectory. Allows routes using '/' for deambiguation: for example girona500/part4 will draw the trajectory of the base_link present in the girona500 vehicle.
-> * * **color** Sets the color of the trajectory. Requires (r,g,b) parameter.
-> * * **lineStyle** Allows diferent line patterns configuration. To know:
+>   * **target** Name of the vehicle, object or vehicle part to draw trajectory. Allows routes using '/' for deambiguation: for example girona500/part4 will draw the trajectory of the base_link present in the girona500 vehicle.
+>   * **color** Sets the color of the trajectory. Requires (r,g,b) parameter.
+>   * **lineStyle** Allows diferent line patterns configuration. To know:
 1: continuous line --------
 2: dashed line - - - - - - -
 3: dashed line --  --  --  -- 
 4: dashed line -   -   -   -
 > * **lightRate**: Sets the light ratio on the scene from 0 total darkness to infinity, default value 1.0.
+
+* **Camera** block sets the main camera parameters and configurse the initial main view and characteristics of the simulator's scene. Is one of the main blocks when configuring and creating scenes.
+>* **freemotion:** This parameter sets if the main view is able to move with trackball or not.
+>* **objectToTrack:** Sets the object to track if freemotion is not set. Main view will follow that object.
+>* **fov:** Field fo view of the main camera.
+>* **aspectRatio:** Proportional relationship between width and height(width/height).
+>* **near:** Distance to the near plane, anything nearer this distance will not be showed.
+>* **far:** Distance to the far plane, anything further this distance will not be showed.
+>* **position:** Initial position of the viewer in the world.
+>* **lookAt:** Sets the initial rotation of the viewer.
+* **vehicle** tag is used to create and figure underwater robots and the sensors availabe on them.
+>* **name:** This parameters sets the vehicle's name that will identify it.
+>* **file:** The URDF file where full description of joints, visual mesh, collision mesh...etc may be provide.
+> * **postion:** Initial position of the vehicle.
+> * **orientation:** Initial rotation of the vehicle, stated in RPY.
+> * **scaleFactor:** Scale for the complete vehicle(every link in URDF will be scaled).
+> * **[virtualCamera](http://www.irs.uji.es/uwsim/wiki/index.php?title=VirtualCamera):** Describes the characteristics of the camera attached to the vehicle.
+> * **[StructuredLightProjector](http://www.irs.uji.es/uwsim/wiki/index.php?title=StructuredLightProjector):** Light projector features, may be used to simulated a laser projector or light.
+> * **[rangeSensor](http://www.irs.uji.es/uwsim/wiki/index.php?title=RangeSensor):** Measures the distance to the nearest obstacle.
+> * **[objectPicker](http://www.irs.uji.es/uwsim/wiki/index.php?title=ObjectPicker):** Simulates a grasp(without physics) attaching the nearest object to the sensor when it reaches a certain distance.
+> * **[imu](http://www.irs.uji.es/uwsim/wiki/index.php?title=Imu):** Estimates the vehicle rotation with respect to the world.
+> * **[pressureSensor](http://www.irs.uji.es/uwsim/wiki/index.php?title=PressureSensor):** Pressure sensor.
+> * **[gpsSensor](http://www.irs.uji.es/uwsim/wiki/index.php?title=GpsSensor):** Gives the vehicle world position. Note only works when the vehicle is near the surface.
+> * **[dvlSensor](http://www.irs.uji.es/uwsim/wiki/index.php?title=DvlSensor):** Estimates vehicle linear speed
+> * **[virtualRangeImage](http://www.irs.uji.es/uwsim/wiki/index.php?title=VirtualRangeImage):** greyscale distance image, analog to virtualCameras but with range information.
+> * **[multibeamSensor](http://www.irs.uji.es/uwsim/wiki/index.php?title=MultibeamSensor):** Simulates an array of rangeSensors, returning the distance to the nearest obstacle in the ZX plane.
+> * **simulatedDevices:** Used for creating devices using the new interface for them. Deprecated, new simualted devices can be added without using it.
+> * **echo:** Example test device for new interface devices.
+> * **[ForceSensor](http://www.irs.uji.es/uwsim/wiki/index.php?title=ForceSensor):** Uses bullet physics to simulate a force sensor in a link of the vehicle returning force torque forces for collisions.
+> * **[DredgeTool](http://www.irs.uji.es/uwsim/wiki/index.php?title=DredgeTool):** Dredging tool available for unearthing sand buried objects.
+
+* **object**block allows to include other 3D models to the sence to interact with robots.
+> * **name:** This parameter sets the object's name that will identify it.
+> * **file:** The 3D mesh file that describes the object. About the formats, input is supported through OSG, so it depends on osg plugins, but most common 3d formats such as .3ds, osg, .ive, .stl, .obj are supported. Some others may need additinal OSG libraries such as .dae or .wrl.
+> * **position:** Inital position of the object.
+> * **orientation:** Initial rotation of the object, stated in RPY.
+> * **scaleFactor:** Scale of the object.(XYZ)
+> * **offsetp:** Object's position offset, it moves the pivot point
+> * **offsetr:** Object's rotation offset.
+> * **[physics](http://www.irs.uji.es/uwsim/wiki/index.php?title=Physics):** This tag allows to set some physical properties for bullet physics simulation.
+
+* **rosInterfaces** allow to attach ROS interfaces tro certain objects, robots or sensors, specifying the communnication posibilities.
+> * **[ROSOdomToPAT](http://www.irs.uji.es/uwsim/wiki/index.php?title=ROSOdomToPAT):** This subsriber reads from a ROS odometry message and moves the target vehicle accordingly.
+> * **[PATToROSOdom](http://www.irs.uji.es/uwsim/wiki/index.php?title=PATToROSOdom):** This interface publishes the target vehicle pose and velocity in a ROS odometry message.
+> * **[WorldToROSTF](http://www.irs.uji.es/uwsim/wiki/index.php?title=WorldToROSTF):** TF ROS interface that publishes the pose of every object, vehicle and device present in the scene.
+> * **[ArmToROSJointState](http://www.irs.uji.es/uwsim/wiki/index.php?title=ArmToROSJointState):** Robotic arm interface that publishes ROS joint state messages with the information of non-fixed joints.
+> * **[ROSJointStateTOArm](http://www.irs.uji.es/uwsim/wiki/index.php?title=ROSJointStateToArm):** This subscriber read ROS joint state messages and move the arm accordingly.
+> * **[VirtualCameraToROSImage](http://www.irs.uji.es/uwsim/wiki/index.php?title=VirtualCameraToROSImage):** Creates a ROS image publisher with the desired camera
+> * **[ROSImageToHUD](http://www.irs.uji.es/uwsim/wiki/index.php?title=ROSImageToHUD):** Subscribes to ROS image publisher to add a camera inside UWSim(for instance real input).
+> * **[ROSTwistToPAT](http://www.irs.uji.es/uwsim/wiki/index.php?title=ROSTwistToPAT):** This subscriber reads ROS Twist messages to set the velocity to the target vehicle.
+> * **[RangeSensorToROSRange](http://www.irs.uji.es/uwsim/wiki/index.php?title=RangeSensorToROSRange:** Range devices publisher. Publishes the distance read by the virtual sensor.
+> * **[ROSPoseToPAT](http://www.irs.uji.es/uwsim/wiki/index.php?title=ROSPoseToPAT):** Subscriber that reads ROS Pose messages and moves the vehicle to the stated position.
+> * **[ImuToROSImu](http://www.irs.uji.es/uwsim/wiki/index.php?title=ImuToROSImu):** This interface publishes an Inertial Measurement Unit readings.
+> * **[PressureSensorToROS]():** Publisher for pressure sensors.
+> * **[GPSSensorToROS]():** Reads the information from GPS sensors and publish it.
+> * **[DVLSensorToROS]():** Creates a publisher for DVL devices.
+> * **[RangeImageSensorToROSImage]():** Uses the ROS Image publisher to send depth images from a range image sensor.
+> * **[multibeamSensorToLaserScan]():** Transforms the multibeam sensor readings in a LaserScan message and publishes it.
+> * **SimulatedDeviceROS:** : Used for creating ROS interfaces inside the new plugin architecture. Deprecated, no longer needed.
+> * **[contactSensorToROS](http://www.irs.uji.es/uwsim/wiki/index.php?title=ContactSensorToROS):** Publishes a binary output depending on the vehicle collision state.
+> * **echoROS:** Device plugin example.
+> * **[ForceSensorROS](http://www.irs.uji.es/uwsim/wiki/index.php?title=ForceSensorROS):** This interface publishes the information of force sensors in a ROS Wrench stamped message.
+> * **[ROSPointCloudLoader](http://www.irs.uji.es/uwsim/wiki/index.php?title=ROSPointCloudLoader):** This subscriber reads from ROS Pointcloud messages and represents them in the 3D UWSim view.
+> * **[RangeCameraToPCL](http://www.irs.uji.es/uwsim/wiki/index.php?title=RangeCameraToPCL):** This subscriber uses a virtualRangeImage camera and publishes a Pointcloud as result.
+
+#### 使用xacro创建自己的场景
+xacro使用预定义的传感器、目标、机器人等的XML块创建自己的库，一旦XML块在一个库中被定义，我们可以在任意其他文件中调用它，而不必重复写代码。基本的macro已经被创建并可以获得实例库，下面的文件已经被创建，可以在UWSim中的data/scenes目录下找到：
+* **[Common](http://www.irs.uji.es/uwsim/wiki/index.php?title=Common):**Basic generic macros for UWSimScenes. This macros create the most common XML blocks such as oceanState, simParams, vehicles, sensors, objects,... . This macros should be used as a starting point to create your own libraries to be used in scenes. If you want to know how parameters work visit the XML description in the corresponding block. This macros are available at common.xacro. Most macros are preceded by an underscore - as xacro does not allow to create a macro with the same name as any defined XML tag.
+* **[DeviceLibrary](http://www.irs.uji.es/uwsim/wiki/index.php?title=DeviceLibrary):** is a xacro library example for sensors and actuators available for uwsim vehicles when configuring and creating scenes. This library creates some macros for specific sensors that can be easily added to any vehicle. We recommend to create you own device library with the common devices you use in your simulations such as cameras, multibeams, sonars... etc. So you just have to specify its parameters once.
+  * **bowtech1:** This macro creates a bowtech camera, identical to the cirs.xml scene. Requires relativeTo, x, y, z, roll, pitch, yaw.
+  * **bowtech_iface:** This macro creates a ROS virtual camera interface for bowtech camera. Doesn't require any argument.
+  * **example_multibeam:** Creates a multibeam identical to the one in cirs.xml scene. Requires pose argumentes: relativeTo, x, y, z, roll, pitch, yaw.
+  * **example_multibeam_iface:** Creates a multibeam interface for the example multibeam.
+* **[ObjectLibrary](http://www.irs.uji.es/uwsim/wiki/index.php?title=ObjectLibrary):** is a xacro library example for objects available for uwsim scenes when configuring and create scenes. This library creates some macros for specfic objects that can be easily added to any scene. We recommend to create your own object library with common objects you use in your simulations such as terrains, rocks, black boxes, ... . So you just have to specfiy its parameters once.
+In the example objectLibrary.xacro we have created two object macros. We left pose arguments to be able to attach them anywhere in the scene.
+
+  * **CIRSterrain:** This macro creates CIRS pool that can be seen in cirs.xml scene. Note it already has the offsets and physical parameters, so only pose arguments are required: x, y, z, roll, pitch, yaw.
+  * **blackbox:** This macro creates the blackbox present in the cirs.xml scene. As it happens with CIRSterrain, physical parameters are already set so only x, y, z, roll, pitch, yaw parameters must be filled when using it.
+* **[VehicleLibrary](http://www.irs.uji.es/uwsim/wiki/index.php?title=VehicleLibrary):** is a xacro library example for vehicle available for uwsim when configuring and creating scenes. This library creates some macros for specific vehicle configuration that can be easily added to any scene. We recommend to create you own vehicle library with the common vehicles you use in your simulations such as the girona500 with the ARM5. So you just have to specify its parameters once.
+In the example vehicleLibrary.xacro we have created an girona500 configuration example, and a interfaces example. We left pose arguments to be able to attach it anywhere in the scene, and initial joints to start the intervention in the desired position.
+
+  * **example_g500ARM5:** This macro creates a simplified girona500 with the ARM5 arm a camera and a multibeam (using the deviceLibrary macros). Requires x, y, z, roll, pitch, yaw, **initialJoints.
+  * **example_g500ARM5_ifaces:** Creates a set of ROS interfaces for the example girona500ARM5 vehicle. It creates a RosOdomTOPAT to move the vehicle, TF publisher, subscriber and publisher for the arm movements and interfaces for the two previously added sensors using deviceLibrary interface macros.
+
+
+#### [XML配置实例：CIRS场景](http://www.irs.uji.es/uwsim/wiki/index.php?title=Configuring_and_creating_scenes)
+uwsim\data\scenesAPAGAR\cirs.xml
+
+
+
+
+
+
 
 ## robots_start.launch
 ``` xml
@@ -286,5 +379,220 @@ UWSim场景XML文件可以分成几块，每块定义不同方面的场景：
 
 </group>
 ```
+## diffboat_scenario2.launch
+```xml
+<include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <plugin name="freefloating_gazebo_fluid" filename="libfreefloating_gazebo_fluid.so">
+
+```
+
+Node [/uwsim]
+Publications: 
+ * /buoy1/Surface/link [geometry_msgs/Point]                 => /gazebo
+ * /buoy2/Surface/link [geometry_msgs/Point]                 => /gazebo
+ * /buoy3/Surface/link [geometry_msgs/Point]                 => /gazebo
+ * /diffboat/Imu [sensor_msgs/Imu]                           => 
+ * /diffboat/Surface/back_l_link [geometry_msgs/Point]       => /gazebo
+ * /diffboat/Surface/back_r_link [geometry_msgs/Point]       => /gazebo
+ * /diffboat/Surface/base_link [geometry_msgs/Point]         => /gazebo
+ * /diffboat/Surface/center_r_link [geometry_msgs/Point]     => /gazebo
+ * /diffboat/Surface/front_l_link [geometry_msgs/Point]      => /gazebo
+ * /diffboat/Surface/front_r_link [geometry_msgs/Point]      => /gazebo
+ * /diffboat/Surface/fwd_left [geometry_msgs/Point]          => /gazebo
+ * /diffboat/Surface/fwd_right [geometry_msgs/Point]         => /gazebo
+ * /rosout [rosgraph_msgs/Log]                               => /rosout
+
+Subscriptions: 
+ * /buoy1/state [nav_msgs/Odometry]                          <= /gazebo
+ * /buoy2/state [nav_msgs/Odometry]                          <= /gazebo
+ * /buoy3/state [nav_msgs/Odometry]                          <= /gazebo
+ * /clock [rosgraph_msgs/Clock]                              <= /gazebo
+ * /diffboat/joint_states [sensor_msgs/JointState]           <= /gazebo
+ * /diffboat/state [nav_msgs/Odometry]                       <= /gazeb
+ * /tf [tf2_msgs/TFMessage]                                  <= /diffboat/odom_base_tf /diffboat/laser_base_tf /gazebo
+ * /tf_static [unknown type]                                 <= /
+ * /uwsim_marker/update [unknown type]                       <= /
+ * /uwsim_marker/update_full [unknown type]                  <= /
+
+Services: 
+ * /SpawnMarker
+ * /uwsim/get_loggers
+ * /uwsim/set_logger_level
+
+Node [/gazebo]
+Publications: 
+ * /buoy1/state [nav_msgs/Odometry]
+ * /buoy2/state [nav_msgs/Odometry]
+ * /buoy3/state [nav_msgs/Odometry]
+ * /clock [rosgraph_msgs/Clock]                              => /diffboat/heading_control /diffboat/patrol /diffboat/odom_base_tf /diffboat/pid_control /diffboat/vel_relay /diffboat/laser_base_tf /diffboat/odom_relay
+ * /diffboat/joint_states [sensor_msgs/JointState]
+ * /diffboat/state [nav_msgs/Odometry]
+ * /diffboat/thruster_use [sensor_msgs/JointState]
+ * /gazebo/link_states [gazebo_msgs/LinkStates]
+ * /gazebo/model_states [gazebo_msgs/ModelStates]
+ * /gazebo/parameter_descriptions [dynamic_reconfigure/ConfigDescription]
+ * /gazebo/parameter_updates [dynamic_reconfigure/Config]
+ * /model/state [nav_msgs/Odometry]
+ * /rosout [rosgraph_msgs/Log]
+ * /scan [sensor_msgs/LaserScan]
+ * /tf [tf2_msgs/TFMessage]
+
+Subscriptions: 
+ * /buoy1/Surface/link [geometry_msgs/Point]
+ * /buoy2/Surface/link [geometry_msgs/Point]
+ * /buoy3/Surface/link [geometry_msgs/Point]
+ * /clock [rosgraph_msgs/Clock]
+ * /diffboat/Surface/back_l_link [geometry_msgs/Point]
+ * /diffboat/Surface/back_r_link [geometry_msgs/Point]
+ * /diffboat/Surface/base_link [geometry_msgs/Point]
+ * /diffboat/Surface/center_r_link [geometry_msgs/Point]
+ * /diffboat/Surface/front_l_link [geometry_msgs/Point]
+ * /diffboat/Surface/front_r_link [geometry_msgs/Point]
+ * /diffboat/Surface/fwd_left [geometry_msgs/Point]
+ * /diffboat/Surface/fwd_right [geometry_msgs/Point]
+ * /diffboat/joint_command [sensor_msgs/JointState]          <= /diffboat/pid_control
+ * /diffboat/thruster_command [sensor_msgs/JointState]       <= /diffboat/heading_control>
+ * /gazebo/current [unknown type]
+ * /gazebo/gazebocurrent [unknown type]
+ * /gazebo/set_link_state [unknown type]
+ * /gazebo/set_model_state [unknown type]
+
+Services: 
+ * /gazebo/apply_body_wrench[gazebo_msgs/ApplyBodyWrench]
+ * /gazebo/apply_joint_effort[gazebo_msgs/ApplyJointEffort]
+ * /gazebo/clear_body_wrenches[gazebo_msgs/ClearBodyWrenches]
+ * /gazebo/clear_joint_forces[gazebo_msgs/ClearJointForces]
+ * /gazebo/delete_light
+ * /gazebo/delete_model[gazebo_msgs/DeleteModel]
+ * /gazebo/get_joint_properties[gazebo_msgs/GetJointProperties]
+ * /gazebo/get_light_properties
+ * /gazebo/get_link_properties[gazebo_msgs/GetLinkProperties]
+ * /gazebo/get_link_state[gazebo_msgs/GetLinkState]
+ * /gazebo/get_loggers
+ * /gazebo/get_model_properties
+ * /gazebo/get_model_state
+ * /gazebo/get_physics_properties
+ * /gazebo/get_world_properties
+ * /gazebo/pause_physics[std_srvs/Empty]
+ * /gazebo/reset_simulation
+ * /gazebo/reset_world
+ * /gazebo/set_joint_properties
+ * /gazebo/set_light_properties
+ * /gazebo/set_link_properties
+ * /gazebo/set_link_state
+ * /gazebo/set_logger_level
+ * /gazebo/set_model_configuration
+ * /gazebo/set_model_state
+ * /gazebo/set_parameters
+ * /gazebo/set_physics_properties
+ * /gazebo/spawn_sdf_model
+ * /gazebo/spawn_urdf_model
+ * /gazebo/unpause_physics[std_srvs/Empty]
+
+ Node [/diffboat/heading_control]
+Publications: 
+ * /diffboat/move_usv/result [std_msgs/Float64]             => /diffboat/patrol
+ * /diffboat/thruster_command [sensor_msgs/JointState]      => /gazebo
+ * /rosout [rosgraph_msgs/Log]
+
+Subscriptions: 
+ * /clock [rosgraph_msgs/Clock]
+ * /diffboat/move_usv/goal [nav_msgs/Odometry]              <= /diffboat/patrol
+ * /diffboat/state [nav_msgs/Odometry]                      <= /gazebo
+
+Services: 
+ * /diffboat/heading_control/get_loggers
+ * /diffboat/heading_control/set_logger_level
+
+Node [/diffboat/laser_base_tf]
+Publications: 
+ * /rosout [rosgraph_msgs/Log]
+ * /tf [tf2_msgs/TFMessage]                                 => /uwsim
+
+Subscriptions: 
+ * /clock [rosgraph_msgs/Clock]
+
+Services: 
+ * /diffboat/laser_base_tf/get_loggers
+ * /diffboat/laser_base_tf/set_logger_level
+
+Node [/diffboat/odom_base_tf]
+Publications: 
+ * /rosout [rosgraph_msgs/Log]
+ * /tf [tf2_msgs/TFMessage]                                => /uwsim
+
+Subscriptions: 
+ * /clock [rosgraph_msgs/Clock]
+ * /diffboat/state [nav_msgs/Odometry]                     <= /gazebo
+
+Services: 
+ * /diffboat/odom_base_tf/get_loggers
+ * /diffboat/odom_base_tf/set_logger_level
+
+Node [/diffboat/odom_relay]
+Publications: 
+ * /odom [nav_msgs/Odometry]
+ * /rosout [rosgraph_msgs/Log]
+
+Subscriptions: 
+ * /clock [rosgraph_msgs/Clock]
+ * /diffboat/state [nav_msgs/Odometry]                     => /gazebo
+
+Services: 
+ * /diffboat/odom_relay/get_loggers
+ * /diffboat/odom_relay/set_logger_level
+
+Node [/diffboat/patrol]
+Publications: 
+ * /diffboat/move_usv/goal [nav_msgs/Odometry]             => /diffboat/heading_control
+ * /rosout [rosgraph_msgs/Log]
+
+Subscriptions: 
+ * /clock [rosgraph_msgs/Clock]
+ * /diffboat/move_usv/result [std_msgs/Float64]            <= /diffboat/heading_control
+
+Services: 
+ * /diffboat/patrol/get_loggers
+ * /diffboat/patrol/set_logger_level
 
 
+Node [/diffboat/pid_control]
+Publications: 
+ * /diffboat/joint_command [sensor_msgs/JointState]        => /gazebo
+ * /rosout [rosgraph_msgs/Log]
+
+Subscriptions: 
+ * /clock [rosgraph_msgs/Clock]
+ * /diffboat/joint_setpoint [unknown type]
+ * /diffboat/joint_states [sensor_msgs/JointState]        <= /gazebo
+
+Services: 
+ * /diffboat/controllers/joint_position_control
+ * /diffboat/controllers/joint_velocity_control
+ * /diffboat/pid_control/get_loggers
+ * /diffboat/pid_control/set_logger_level
+
+ Node [/diffboat/thrusters/joint_state_publisher]
+Publications: 
+ * /diffboat/thruster_command [sensor_msgs/JointState]
+ * /rosout [rosgraph_msgs/Log]
+
+Subscriptions: 
+ * /clock [rosgraph_msgs/Clock]
+
+Services: 
+ * /diffboat/thrusters/joint_state_publisher/get_loggers
+ * /diffboat/thrusters/joint_state_publisher/set_logger_level
+
+
+Node [/diffboat/vel_relay]
+Publications: 
+ * /rosout [rosgraph_msgs/Log]
+
+Subscriptions: 
+ * /clock [rosgraph_msgs/Clock]
+ * /navigation_velocity_smoother/raw_cmd_vel [unknown type]
+
+Services: 
+ * /diffboat/vel_relay/get_loggers
+ * /diffboat/vel_relay/set_logger_level

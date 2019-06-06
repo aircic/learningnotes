@@ -190,7 +190,7 @@ cd .. && catkin_make
 主节点使用XML远程过程调用（XMLRPC，XML-Remote Procedure Call）与节点进行通信。XMLRPC是一种基于HTTP的协议，主节点不与连接到主节点的节点保持连接。换句话说，节点只有在需要注册自己的信息或向其他节点发送请求信息时才能访问主节点并获取信息。通常情况下，不检查彼此的连接状态。由于这些特点，ROS可用于非常大而复杂的环境。XMLRPC也非常轻便，支持多种编程语言，使其非常适合支持各种硬件和语言的ROS。
 #### 运行指令： roscore
 ### 节点(node)
-#### 功能：ROS中运行的最小处理器单元，视作一个可执行程序。
+#### 功能：ROS中运行的最小处理器单元，可视为一个可执行程序。在ROS中，建议为一个目的创建一个节点。节点在运行时向主节点注册节点名称、发布者(publisher)名称、订阅者(subscriber)名称、服务服务器(service server)名称、服务客户端(service client)名称，且注册消息形式、URI地址和端口。
 节点运行需要向主节点注册名称：
 * 节点名称
 * 发布者(publisher)名称
@@ -200,9 +200,11 @@ cd .. && catkin_make
 * 消息形式
 * URI地址和端口
 #### 节点间通信：
-* 普通节点与主节点之间通信通过XMLRPC
-* 普通节点之间的通信通过TCPROS
-
+* 节点与主节点之间通信通过XMLRPC。
+* 节点之间的连接请求和响应使用XMLRPC，而消息通信使用TCPROS。
+### 功能包(package)
+功能包是构成ROS的基本单元。ROS应用程序是以功能包为单位开发的，功能包包括至少一个以上的节点或拥有用于运行其他功能包的节点的配置文件。它还包含功能包所需的所有文件，如用于运行各种进程的ROS依赖库、数据集合配置文件等。
+元功能包(metapackage)是一个具有共同目的的功能包的集合。比如，导航元功能包包含AMCL、DWA、EKF和map_server等10多个功能包。
 ### 消息
 #### 消息通信方法：TCPROS和UDPROS等
 #### 消息分类：
@@ -357,6 +359,22 @@ string child_frame_id
 geometry_msgs/PoseWithCovariance pose
 geometry_msgs/TwistWithCovariance twist
 ```
+####[Gazebo ROS API](http://wiki.ros.org/gazebo)
+1. Gazebo Subsribed Topics
+/Gazebo/set_link_state [gazebo_msgs/LinkState](http://docs.ros.org/api/gazebo_msgs/html/msg/LinkState.html)
+/Gazebo/set_model_state [gazebo_msgs/ModelState](http://docs.ros.org/api/gazebo_msgs/html/msg/ModelState.html)
+2. Gazebo Published Topics
+/clock [rosgraph_msgs/Clock](http://docs.ros.org/api/rosgraph_msgs/html/msg/Clock.html)
+/Gazebo/link_states [gazebo_msgs/LinkStates](http://docs.ros.org/api/gazebo_msgs/html/msg/LinkStates.html)
+/Gazebo/model_states [gazebo_msgs/ModelStates](http://docs.ros.org/api/gazebo_msgs/html/msg/ModelStates.html)
+3. Gazebo Service
+3.1 Create and destroy models in simulation
+3.2 State and properties getters
+3.3 State and properties setters
+3.4 Simulation control
+    /gazebo/pause_physics [std_srvs/Empty](http://docs.ros.org/api/std_srvs/html/srv/Empty.html)
+    /gazebo/unpause_physics [std_srvs/Empty](http://docs.ros.org/api/std_srvs/html/srv/Empty.html)
+3.5 Force control
 
 ## [CMakeList.txt语法介绍](https://blog.csdn.net/afei__/article/details/81201039)
 1. 指定cmake的最小版本
@@ -821,6 +839,44 @@ roscpp有两种不同的参数API：“bare”版用于ros::param命名空间，
 ## [roscpp](http://wiki.ros.org/roscpp/Tutorials)
 
 ## [rospy](http://wiki.ros.org/rospy/Tutorials)
+### [Sevrices](http://wiki.ros.org/rospy/Overview/Services)
+####1. Service definitions, request messages, and response message
+ROS Services are defined by srv files, which contains a request message and a response message. There are identical to the messages used by ROS Topics. ros.py converts these srv files into Python source code and creates three classes that you need to be familiar with: service definitions, request messages, and response messages. The names of these classes come directly from the srv filename:
+``` 
+my_package/srv/Foo.srv ——> my_package.srv.Foo
+my_package/srv/Foo.srv ——> my_package.srv.FooRequest
+my_package/srv/Foo.srv ——> my_package.srv.FooResponse
+```
+**服务定义(Service Definitions)** 是一个包含请求和响应的数据类型的容器。在创建或调用服务时，需要导入服务定义并传递给服务初始化方法，
+```
+add_two_ints = rospy.ServiceProxy('service_name', my_package.srv.Foo)
+```
+**服务请求信息(Service Request Messages)** 用于调用相关服务。
+**服务请求信息(Service Response Messages)** 用于接收相关服务返回值。
+####2. Service proxies
+调用一个服务，需要创建`rospy.ServiceProxy`带上想要调用的服务名称，通过调用`rospy.wait_for_service()`进行阻断直到服务可用。如果服务返回错误，`rospy.ServiceException`会被触发。
+``` 
+rospy.wait_for_service('add_two_ints')
+add_two_ints = rospy.ServiceProxy('add_two_ints', AddTwoInts)
+try:
+    resp1 = add_two_ints(x, y)
+except rospy.ServiceException as exc:
+    print("Service did not process request:" + str(exc))
+```
+其中，`rospy.ServiceProxy(name, service_class, persistent=False, headers=None)`创建了一个服务代理，`rospy.wait_for_service(service, timeout=None)`等待直到服务可用，如果设置了timeout值，则超过等待设定值会触发ROSException。
+2.1 Calling services
+`rospy.ServiceProxy`实例是可调用的，意味着你可以使用想要方法去调用它，
+```
+add_two_ints = rospy.ServiceProxy('add_two_ints', AddTwoInts)
+add_two_ints(1, 2)
+```
+
+
+
+
+
+
+
 
 ## [topic_tools/relay](http://wiki.ros.org/topic_tools/relay)
 relay是ROS的一个节点，属于topic_tools包的一部分，它订阅一个话题并将收到的数据再发布给另一个话题，使用规范：
@@ -828,6 +884,13 @@ relay是ROS的一个节点，属于topic_tools包的一部分，它订阅一个�
 Subscribe to `<intopic>`and republish to another topic.
 * intopic: Incoming topic to subscribe to
 * outtopic: Outgoing topic to publish on (default: intopic_relay)
+## [move_base](http://wiki.ros.org/move_base/)
+The move_base package provides an implementation of an action (see the actionlib package) that, given a goal in the world, will attempt to reach it with a mobile base. The move_base node links together a global and local planner to accomplish its global navigation task. It supports any global planner adhering to the nav_core::BaseGlobalPlanner interface specified in the nav_core package and any local planner adhering to the nav_core::BaseLocalPlanner interface specified in the nav_core package. The move_base node also maintains two costmaps, one for the global planner, and one for a local planner (see the costmap_2d package) that are used to accomplish navigation tasks.
+## [joint_state_publisher](http://wiki.ros.org/joint_state_publisher)
+This package contains a tool for setting and publishing joint state values for given URDF.This package publishes [sensor_msgs/JointState](http://docs.ros.org/api/sensor_msgs/html/msg/JointState.html) messages for a robot. The package reads the robot_description parameter, finds all of non-fixed joints and publishes a JointState message with all those joints defined. Can be used in conjunction with the [robot_state_publisher](http://wiki.ros.org/robot_state_publisher) node to also publish transforms for all joint states.
+
+## [robot_state_publisher](http://wiki.ros.org/robot_state_publisher)
+This package allows you to publish the state of a robot to [tf](http://wiki.ros.org/tf). Once the state gets published, it is available to all components in the system that also use tf. The package takes the joint angles of the robot as input and publishes the 3D poses of the robot links, using a kinematic tree model of the robot. The package can both be used as a library and as a ROS node. This package has been well tested and the code is stable.
 
 ## problems
 1. "Package [] does not have a path"

@@ -104,7 +104,7 @@ namesapce gazebo
         {
         }
 ```
-仅有的强制函数`Load`接收来自SDF文件的SDF元素和属性。
+仅有的强制函数`Load`接收来自URDF/SDF文件中的元素和属性。`physics::WorldPtr _world`为指向插件依附的world的指针，`sdf::ElementPtr _sdf`为指向插件的sdf元素的指针，其他类型的指针`physics::ModelPtr _model`为指向插件依附的model的指针，`_model`为指向插件依附的model的指针，
 
 ###编译插件
 请确保正确安装了gazebo，在编译之前需要创建
@@ -141,8 +141,19 @@ export GAZEBO_PLUGIN_PATH=${GAZEBO_PLUGIN_PATH}:~/gazebo_plugin_tutorial/build/
 >>注：如在当前的命令行里运行上面命令，只改变了当前的shell中的路径，如果希望每次打开命令窗口都使用这个插件，需要将上面命令行加入到`~/.bashrc`文件中。
 
 ###使用插件
-一旦将插件编译成共享库，就可以把它添加到SDF文件中的world或者model内。启动时，Gazebo解析SDF文件，地位插件并加载代码，Gazebo找到插件至关重要，要么说明插件的全局路径，要么插件路径加入到GAZEBO_PLUGIN_PAHT环境变量中。
+一旦将插件编译成共享库，就可以把它添加到SDF文件中的world或者model内。启动时，Gazebo解析SDF文件，定位插件并加载代码，Gazebo找到插件至关重要，要么说明插件的全局路径，要么插件路径加入到GAZEBO_PLUGIN_PAHT环境变量中。
 以在world中调用插件为例进行插件使用说明，先建立一个[wold文件](https://bitbucket.org/osrf/gazebo/src/default/examples/plugins/hello_world/hello.world)
 ``` shell
 gedit ~/gazebo_plugin_tutorial/hello.world
 ```
+在文件中添加下面代码
+``` xml
+<?xml version="1.0"?>
+<sdf version="1.4">
+  <world name="default">
+    <plugin name="hello_world" filename="libhello_world.so"/>
+  </world>
+</sdf>
+```
+通过gzserver命令打开world文件
+` gzserver ~/gazebo_plugin_tutorial/hello.world --verbose`
