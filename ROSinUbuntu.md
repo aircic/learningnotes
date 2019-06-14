@@ -320,6 +320,13 @@ string child_frame_id  # the frame id of the child frame
 geometry_msgs/Transform transform
 
 ```
+* [geometry_msgs/Wrench.msg](http://docs.ros.org/api/geometry_msgs/html/msg/Wrench.html)
+```
+# This represents force in free space, separated into 
+# its linear and angular parts.
+Vector3 force
+Vector3 torque
+```
 * [tf2_msgs/TFMessage.msg](http://docs.ros.org/api/tf2_msgs/html/msg/TFMessage.html)
 ``` msg
 geometry_msgs/TransformStamped[] transforms
@@ -725,6 +732,9 @@ launch文件通过`<param>`加载parameter，launch文件执行后，parameter�
 6. `<group>`
 `<group>`标签给节点进行分组，每个组有自己独立的命名空间。`<group>`标签等价于顶层的`<launch>`标签，类似于一个标签容器，也是就是可以在`<group>`内使用任何标签，就像在`<launch>`标签内。
 
+7. `<remap>`
+在启动ROS节点时，`<remap>`标签将名称映射参数传递给ROS节点，这种方式比直接设置节点参数属性更规范。`<remap>`标签可以在`<launch>` `<node>` `<group>`中应用。
+`<remap from="original-name to="new-name" />`
 
 ## URDF建模
 [ROS urdf/Tutorials](http://wiki.ros.org/urdf/Tutorials)
@@ -837,7 +847,26 @@ roscpp有两种不同的参数API：“bare”版用于ros::param命名空间，
 
 
 ## [roscpp](http://wiki.ros.org/roscpp/Tutorials)
-
+### [Using Parameters in roscpp](http://wiki.ros.org/roscpp_tutorials/Tutorials/Parameters)
+#### 1. 获取参数
+1.1 `getParam()`
+```
+ std::string s;
+ n.getParam("my_param", s);
+ ```
+ 其中，n是一个ros::NodeHandle的实例，上面例子中如果获取参数"my_param"成功，getParam()返回true并将参数赋值给变量s，否则，getParam()返回false。
+1.2 `param()`
+```
+ int i;
+ n.param("my_param", i, 42);
+ ```
+ param()与getParam()相似，但在不能成功获取参数时，会声明一个默认值。
+#### 2. 设置参数
+`n.setParam("my_param", "hello there");`
+#### 3. 删除参数
+`n.deleteParam("my_param");`
+#### 4. 查验参数是否存在
+`n.hasParam("my_param");`
 ## [rospy](http://wiki.ros.org/rospy/Tutorials)
 ### [Sevrices](http://wiki.ros.org/rospy/Overview/Services)
 ####1. Service definitions, request messages, and response message
@@ -854,7 +883,7 @@ add_two_ints = rospy.ServiceProxy('service_name', my_package.srv.Foo)
 **服务请求信息(Service Request Messages)** 用于调用相关服务。
 **服务请求信息(Service Response Messages)** 用于接收相关服务返回值。
 ####2. Service proxies
-调用一个服务，需要创建`rospy.ServiceProxy`带上想要调用的服务名称，通过调用`rospy.wait_for_service()`进行阻断直到服务可用。如果服务返回错误，`rospy.ServiceException`会被触发。
+可以通过想要调用的服务名称创建`rospy.ServiceProxy`来调用一个服务，通常会调用`rospy.wait_for_service()`进行阻断直到服务可用。如果服务返回错误，`rospy.ServiceException`会被触发。
 ``` 
 rospy.wait_for_service('add_two_ints')
 add_two_ints = rospy.ServiceProxy('add_two_ints', AddTwoInts)

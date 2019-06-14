@@ -33,8 +33,46 @@ catkin_create_pkg myusv_control
 
 #### 4. 创建机器人模型
 船体模型
+* gazebo:
+  simpleHull3/base_link.dae  
+  simpleHull3/centerRight.dae  
+  simpleHull3/backLeft.dae  
+  simpleHull3/backRight.dae  
+  simpleHull3/frontLeft.dae  
+  simpleHull3/frontRight.dae  
+  simpleHull3/thruster.dae  
+* uwsim:
+  simpleHull3/base_link.obj  
+  simpleHull3/centerRight.obj  
+  simpleHull3/backLeft.obj  
+  simpleHull3/backRight.obj  
+  simpleHull3/frontLeft.obj  
+  simpleHull3/frontRight.obj  
+  simpleHull3/thruster.obj  
+CFD模型参数：
+* $\mathbf{M}$ 惯性矩阵(inertia matrix)
+* $\mathbf{G(v)}$ 科氏力(Coriolis)和离心力(centrifugal)
+* $\mathbf{d(v)}$ 水动力阻尼力(hydrodynamic damping force)
+* $\mathbf{\tau_g}$ 重力、浮力和诱导力矩(induced torque)
+* $\mathbf{\tau_u}$ 推力
+dampingXYZ
+angularDampingXYZ
+extraPayload
+front_body_mass
+middle_body_mass
+back_body_mass
+front_water_displaced_mass
+middle_water_displaced_mass
+back_water_displaced_mass
+frontal_area
+lateral_area
+lateral_length
+
+
 传感器模型
-推进器模型
+  simpleHull3/box.obj  
+
+
 #### 5. 建立机器人模型与ROS的连接
 #### 6. 使用teleop节点控制机器人
 #### 7. 机器人增加传感器（摄像头）
@@ -381,8 +419,66 @@ uwsim\data\scenesAPAGAR\cirs.xml
 ```
 ## diffboat_scenario2.launch
 ```xml
+<!--Launch Gazebo with empty world-->
 <include file="$(find gazebo_ros)/launch/empty_world.launch">
-    <plugin name="freefloating_gazebo_fluid" filename="libfreefloating_gazebo_fluid.so">
+  <arg name="world_name" value="$(find usv_sim)/world/empty.world"/>
+    <plugin name="freefloating_gazebo_fluid"filename="libfreefloating_gazebo_fluid.so"/>
+<!--Launch uwsim-->
+<node name="uwsim" pkg="uwsim" type="uwsim" args="$(arg disableShaders) --dataPath $(find usv_sim) --configfile scenes/diffboat_scenario2.xml" respawn="false" required="true"/>
+  <vehicle>urdf/diffboat_uwsim.urdf</vehicle>
+    <mesh filenames="meshes/simpleHull3/base_link.obj" scale="0.21 0.21 0.21"/>
+    <mesh filenames="meshes/simpleHull3/centerRight.obj" scale="0.21 0.21 0.21"/>
+    <mesh filenames="meshes/simpleHull3/backLeft.obj" scale="0.21 0.21 0.21"/>
+    <mesh filenames="meshes/simpleHull3/backRight.obj" scale="0.21 0.21 0.21"/>
+    <mesh filenames="meshes/simpleHull3/frontLeft.obj" scale="0.21 0.21 0.21"/>
+    <mesh filenames="meshes/simpleHull3/frontRight.obj" scale="0.21 0.21 0.21"/>
+    <mesh filenames="meshes/simpleHull3/box.obj" scale="0.21 0.21 0.21"/>
+    <mesh filenames="meshes/simpleHull3/thruster.obj" scale="0.21 0.21 0.21"/>
+    <mesh filenames="meshes/simpleHull3/thruster.obj" scale="0.21 0.21 0.21"/>
+  <vehicle>urdf/buoy_uwsim.urdf</vehicle>
+     <mesh filename="meshes/buoy2.osg" scale="0.5 0.5 0.5"/>
+  <object>terrain/difluvio5/novo4.obj<object/>
+<!--Launch diffboat and buoy-->
+<incldue file="$(find usv_sim)/launch/scenarios_launchs/diffboat_scenario2_spawner.launch"/>
+  <param name="diffboat/robot_description" command="$(find xacro)/xacro --inorder $(find usv_sim)/xacro/diffboat.xacro"/>
+    <xacro:include filename="$(find usv_sim)/xacro/boat_subdivided_validated.xacro" />
+      <mesh filename="package://usv_sim/meshes/simpleHull3/base_link.dae" scale="0.21 0.21 0.21"/>
+      <mesh filename="package://usv_sim/meshes/simpleHull3/centerRight.dae" scale="0.21 0.21 0.21"/>
+      <mesh filename="package://usv_sim/meshes/simpleHull3/backLeft.dae" scale="0.21 0.21 0.21"/>
+      <mesh filename="package://usv_sim/meshes/simpleHull3/backRight.dae" scale="0.21 0.21 0.21"/>
+      <mesh filename="package://usv_sim/meshes/simpleHull3/frontLeft.dae" scale="0.21 0.21 0.21"/>
+      <mesh filename="package://usv_sim/meshes/simpleHull3/frontRight.dae" scale="0.21 0.21 0.21"/>
+      <xacro:macro name="thruster_link">
+         <mesh filename="package://usv_sim/meshes/simpleHull3/thruster.dae" scale="0.21 0.21 0.21"/>
+      </xacro:macro>
+    <plugin name="freefloating_gazebo_control" filename="libfreefloating_gazebo_control.so"/>
+  <node name="diffboat_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen" args="-urdf -model diffboat -param diffboat/robot_description -x 240 -y 100 -z 1 -R 0 -P 0 -Y 0"/>
+  <param name="buoy1/robot_description" command="$(find xacro)/xacro --inorder $(find usv_sim)/xacro/buoy.xacro"/>
+    <mesh filename="package://usv_sim/meshes/buoy2.dae" scale="0.5 0.5 0.5"/>
+  <node name="buoy1_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen" args="-urdf -model buoy1 -param buoy1/robot_description -x 250 -y 100 -z 1 -R 0 -P 0 -Y 0"/>
+  <param name="terrain_description" command="$(find xacro)/xacro --inorder $(find usv_sim)/terrain/diluvio5/novo4.sdf"/>
+    <mesh <uri>file://$(find usv_sim)/terrain/diluvio5/novo4.dae</uri>/>
+  <node name="terrain_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen" args="-sdf -model terrain -param terrain_description -x 0 -y 558 -z 0 -R 0 -P 0 -Y 0"/>
+<!--navigation node-->
+<node name="patrol" pkg="usv_navigation" type="patrol_pid_scene2.py" ns="diffbot" unless="$(arg gui)"/>
+<!--control node-->
+<include file="$(find usv_sim)/launch/models/spawn_diffboat.launch">
+  <rosparam file="$(find usv_sim)/config/diffboat.yaml" command="load"/>
+  <node name="pid_control" pkg="freefloating_gazebo" type="pid_control" output="screen" respawn="true"/>
+  <node name="heading_control" pkg="usv_base_ctrl" type="diff_control_heading.py" unless="$(arg gui)" output="screen" />
+  <node name="odom_base_tf" pkg="usv_tf" type="world_tf_broadcaster.py"/>
+  <node pkg="tf" type="static_transform_publisher" name="laser_base_tf" args="0.5 0 0.2 0 0 0 1 base_link diffboat/base_laser 10" />
+  <node name="odom_relay" type="relay" pkg="topic_tools" args="state /odom" />
+  <node name="vel_relay" type="relay" pkg="topic_tools" args="/navigation_velocity_smoother/raw_cmd_vel cmd_vel" />
+  <group ns="thrusters">
+	  <param name="robot_description" command="$(find xacro)/xacro --inorder $(find usv_sim)/urdf/diffboat_dummy.urdf"/>                         
+	  <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" respawn="true" if="$(arg gui)">
+		<param name="use_gui" value="True"/>
+		<remap from="joint_states" to="/$(arg namespace)/thruster_command" />
+		</node>             
+	</group>
+
+
 
 ```
 

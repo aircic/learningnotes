@@ -132,6 +132,8 @@ Lorem ipsum dolor {++sit++} amet…
 * 行内公式用`$...$`定义，语句为$\sum_{i=0}^{N}\int_{a}^{b}g(t,i)\text{d}t$
 * 单独显示的公式用`$$...$$`定义，语句为
 $$\sum_{i=0}^{N}\int_{a}^{b}g(t,i)\text(d)t$$
+
+
 2. 希腊字母  
 
 显示 | 小写 | 显示 |  大写
@@ -230,29 +232,21 @@ $\$ | \
 $\$ | \
 $\$ | \
 $\$ | \
-$\$ | \
-$\$ | \
-$\$ | \
-$\$ | \
-$\$ | \
-$\$ | \
-$\$ | \
-$\$ | \
-$\$ | \
-$\$ | \
-$\$ | \
-$\$ | \
-$\$ | \
-$\$ | \
-$\$ | \
-$\$ | \
-$\$ | \
-$\$ | \
-$\$ | \
-$\$ | \
-$\$ | \
-$\$ | \
-$\$ | \
+4. 字体
+* Use \mathbb or \Bbb for "blackboard bold": $\Bbb{BLACKBOARD BOLD}$
+* Use \mathbf for boldface: 
+  $\mathbf{ABCDEFGHIJKLMNOPQRSTUVWXYZ}$ 
+  $\mathbf{abcdefghijklmnopqrstuvwxyz}$.
+* Use \mathit for italics: 
+  $\mathit{ABCDEFGHIJKLMNOPQRSTUVWXYZ}$ 
+  $\mathit{abcdefghijklmnopqrstuvwxyz}$.
+* Use \pmb for boldfaced italics: 
+  $\pmb{ABCDEFGHIJKLMNOPQRSTUVWXYZ}$ 
+  $\pmb{abcdefghijklmnopqrstuvwxyz}$.
+* Use \mathrm for roman font: 
+  $\mathrm{ABCDEFGHIJKLMNOPQRSTUVWXYZ}$ 
+  $\mathrm{abcdefghijklmnopqrstuvwxyz}$.
+
 
 [^2]: https://www.jianshu.com/p/a0aa94ef8ab2
 [^3]: https://www.zybuluo.com/codeep/note/163962#mjx-eqn-eqsample
