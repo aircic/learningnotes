@@ -355,6 +355,58 @@ float64[] position
 float64[] velocity
 float64[] effort
 ```
+* [sensor_msgs/LaserScan.msg](http://docs.ros.org/api/sensor_msgs/html/msg/LaserScan.html)
+``` msg
+# Single scan from a planar laser range_finder
+#
+# If you have another ranging device with different behavior (e.g. a sonar array),
+# please find or create a different message, since applications will make fairly 
+# laser-specific assumptions about this data
+
+Header header         # timestamp in the header is  the acquisition time of 
+                      # the first ray in the scan.
+                      # In frame frame_id, angles are measured around
+                      # the positive Z axis (counterclockwise, if Z is up)
+                      # with zero angle being forward along the x axis.
+
+float32 angle_min     # start angle of the scan [rad]
+float32 angle_max     # end angle of the scan [rad]
+float32 angle_increment # angular distance between measurements [rad]
+
+float32 time_increment # time between measurements [seconds] - if your scanner
+                       # is moving, this will be used in interpolating position of 3d points
+float32 scan_time      # time between scans [seconds]
+
+float32 range_min      # minimum range value [m]
+float32 range_max      # maximum range value [m]
+
+float32[] ranges       # range data [m] (Note: values < range_min or > range_max should be discarded)
+float32[] intensities  # intensity data [device-specific units]. If your device does not provide intensities, 
+                       # please leave the array empty.
+```
+* [sensor_msgs/Imu](http://docs.ros.org/api/sensor_msgs/html/msg/Imu.html)
+```
+# This is a message to hold data from an IMU (Inertial Measurement Unit)
+#
+# Accelerations should be in m/s^2 (not in g's), and rotational velocity should be in rad/sec
+#
+# If the covariance of the measurement is know, it should be filled in (if all you know is the 
+# variance of each measurement, e.g. from the datasheet, just put those along the diagonal)
+# A covariance matrix of all zeros will be interpreted as "covariance unknown", and to use the 
+# data a covariance will have to be assumed or gotten from some other source
+#
+# If you have no estimate for one of the data elements (e.g. your IMU doesn't produce an orientation
+# estimate), please set element 0 of the associated covariance matrix to -1
+# If you are interpreting this message, please check for a value of -1 in the first element of each 
+# covariance matrix, and disregard the associated estimate.
+Header header
+geometry_msgs/Quanternion orientation
+float64[9] orientation_covariance # Row major about x, y, z axes
+geometry_msgs/Vector3 angular_velocity
+float64[9] angular_velocity_covariance # Row major about x, y, z axes
+geometry_msgs/Vector3 linear_acceleratin
+float64[9] linear_acceleration_covariance # Row major about x, y, z axes
+```
 * [nav_msgs/Odometry](http://docs.ros.org/api/nav_msgs/html/msg/Odometry.html)
 ``` msg
 # This represents an estimate of a position and velocity in free space.
@@ -844,9 +896,47 @@ roscpp有两种不同的参数API：“bare”版用于ros::param命名空间，
 5. [rospy's parameter API](http://wiki.ros.org/rospy/Overview/Parameter%20Server)
 `rospy.get_param()`
 `rospy.set_param()`
-
+## [Index of ROS Enhancement Proposals (REP)](http://www.ros.org/reps/rep-0000.html)
+### [Standard Units of Measure and Coordinate Conventions](http://www.ros.org/reps/rep-0103.html)
+### [Coordinate Frames for Mobile Platforms](http://www.ros.org/reps/rep-0105.html)
+**base_link**
+`base_link`坐标系固定在机器人移动基座上，可以放置在任意位姿，不同硬件平台可以放置基座的不同位置，提供一个显而易见的参考点。
+**odom**
+`odom`坐标系是一个世界固定坐标系。移动平台在`odom`坐标系的位置可能随时间漂移而没有边界。这种漂移使得`odom`坐标系不能长期作为全局参考系。然而，机器在`odom`坐标系中的位姿是连续的，没有离散的跳跃。`odom`坐标系作为短期的精确的局部参考非常有用。通常基于一个里程计源建立`odom`坐标系，比如车轮里程计、视觉里程计、IMU等。
+`map`坐标系是一个世界固定坐标系，z轴指向上。移动机器人相对`map`坐标系的位姿没有随时间明显漂移。`map`坐标系不是连续的，意味着移动机器人在`map`坐标系中的位姿可能存在离散的跳跃。`map`坐标系作为长期的全局参考非常有用，但是位置估计器的离散跳动不适合局部感知和行动
+**earth**
+`earth`坐标系位于ECEF原点，这个坐标系允许在不同的`map`坐标系的多机器人交互。如果实际中只有一个`map`坐标系，就不需要`earth`坐标。
+各坐标树状关系：`earth`——>`map`——>`odom`——>`base_link`
 
 ## [roscpp](http://wiki.ros.org/roscpp/Tutorials)
+节点初始化有两个过程
+(1)通过调用ros::init()函数初始化节点，这种方式提供ROS命令行参数声明节点名称和其他选项。
+`void ros::init(<command line or remapping arguments>, std::string node_name, uint32_t options);`
+(2)通过创建ros::NodeHandle启动节点，当然也有其他方法启动节点。
+
+### [NodeHandles](http://wiki.ros.org/roscpp/Overview/NodeHandles)
+ros::NodeHandle类有两个功能：(1)启动和关闭程序内部的节点，(2)提供命名空间外层方法。
+1. 节点启动与关闭
+`ros::NodeHandle nh;`
+节点创建时，如果内部节点还没有启动，ros::NodeHandle会启动节点，一旦所有ros::NodeHandle的实例被注销，节点将自动关闭。
+2. 命名空间
+`ros::NodeHandle nh("my_namespace");`
+这使得与该节点句柄一起使用的任何相对名称相对于`<node_namespace>/my_namespace`，而不仅仅是`<node_namespace>`。
+声明父节点句柄和相对命名空间
+```
+ros::NodeHandle nh1("ns1");
+ros::NodeHandle nh2(nh1, "ns2");
+```
+上面语句的节点句柄nh2的命名空间`<node_namespace>/ns1/ns2`。
+**全局名称**
+`ros::NodeHandle nh("/my_gloabl_namespace");`
+**私有名称**
+``` c++
+ros::NodeHandle nh("~my_private_namespace");
+ros::Subscriber sub = nh.subscribe("my_private_topic", ...);
+```
+上面例子将订阅`<node_name>/my_private_namespace/my_private_topic`。
+
 ### [Using Parameters in roscpp](http://wiki.ros.org/roscpp_tutorials/Tutorials/Parameters)
 #### 1. 获取参数
 1.1 `getParam()`
@@ -868,6 +958,71 @@ roscpp有两种不同的参数API：“bare”版用于ros::param命名空间，
 #### 4. 查验参数是否存在
 `n.hasParam("my_param");`
 ## [rospy](http://wiki.ros.org/rospy/Tutorials)
+### [Creating a ROS Package](http://wiki.ros.org/ROS/Tutorials/CreatingPackage)
+### [Writing a Simple Publisher and Subscriber](http://wiki.ros.org/rospy_tutorials/Tutorials/WritingPublisherSubscriber)
+1. Writing the Publisher Node
+``` shell
+roscd beginner_tutorials # 进入包beginner_tutorials目录，在[Creating a ROS Package](http://wiki.ros.org/ROS/Tutorials/CreatingPackage)教程中创建
+mkdir scripts # 创建scripts目录用来存储python代码
+cd scripts
+wget https://raw.github.com/ros/ros_tutorials/kinetic-devel/rospy_tutorials/001_talker_listener/talker.py # 下载实例代码
+chmod +x talker.py # 赋予代码可执行权
+```
+`rosed beginner_tutorials talker.py`打开代码文件，内容如下：
+``` python
+#!/usr/bin/env python ## 第一行声明确保脚本以python脚本执行
+# license removed for brevity
+import rospy
+from std_msgs.msg import String
+
+def talker():
+    pub = rospy.Publisher('chatter', String, queue_size=10) # 声明节点发布的话题名称“chatter”，类型为std_msgs.msg.String，
+    rospy.init_node('talker', anonymous=True)               # 初始化节点名称，才能启动与master节点的通信。更多内容参考[Initialization and Shutdown - Initializing your ROS Node](http://wiki.ros.org/rospy/Overview/Initialization%20and%20Shutdown#Initializing_your_ROS_Node)
+    rate = rospy.Rate(10) # 10hz                            # 创建Rate对象速率，配合sleep()实现期望的速率执行循环。
+    while not rospy.is_shutdown():                          # 标准的循环结构
+        hello_str = "hello world %s" % rospy.get_time()
+        rospy.loginfo(hello_str) 
+        pub.publish(hello_str)                              # 发布字符串“hello_str”到话题“chatter”
+        rate.sleep()                                        # 进行足够长时间的休眠以实现期望的循环速率
+
+if __name__ == '__main__':
+    try:
+        talker()
+    except rospy.ROSInterruptException:
+        pass
+```
+2. Writing the Subscriber Node
+```
+roscd beginner_tutorials/scripts/ # 进入包的scripts目录
+wget https://raw.github.com/ros/ros_tutorials/kinetic-devel/rospy_tutorials/001_talker_listener/listener.py # 下载源码
+```
+打开源码文件
+``` python
+#!/usr/bin/env python
+import rospy
+from std_msgs.msg import String
+
+def callback(data):
+    rospy.loginfo(rospy.get_caller_id() + "I heard %s", data.data)
+    
+def listener():
+
+    # In ROS, nodes are uniquely named. If two nodes with the same
+    # name are launched, the previous one is kicked off. The
+    # anonymous=True flag means that rospy will choose a unique
+    # name for our 'listener' node so that multiple listeners can
+    # run simultaneously.
+    rospy.init_node('listener', anonymous=True)   # 初始化节点名称“listener”
+
+    rospy.Subscriber("chatter", String, callback) # 订阅话题“chatter”，类型为std_msgs.msg.String，当接收到新的消息，函数“callback”会被调用且新消息作为函数的第一参数。
+
+    # spin() simply keeps python from exiting until this node is stopped
+    rospy.spin()
+
+if __name__ == '__main__':
+    listener()
+```
+
 ### [Sevrices](http://wiki.ros.org/rospy/Overview/Services)
 ####1. Service definitions, request messages, and response message
 ROS Services are defined by srv files, which contains a request message and a response message. There are identical to the messages used by ROS Topics. ros.py converts these srv files into Python source code and creates three classes that you need to be familiar with: service definitions, request messages, and response messages. The names of these classes come directly from the srv filename:
@@ -900,12 +1055,233 @@ add_two_ints = rospy.ServiceProxy('add_two_ints', AddTwoInts)
 add_two_ints(1, 2)
 ```
 
+## tf
+`tf`包允许用户随时追踪多个坐标系，并以树形结构表达各坐标系之间的关系，随时可以在任意两个坐标系之间变换点、矢量等。`tf::StampedTransform`和`geometry_msgs/TransformStamped`是相同的变换，都将数据从"child_frame_id"变换到"frame_id"。
+### [Writing a tf broadcaster (C++)](http://wiki.ros.org/tf/Tutorials/Writing%20a%20tf%20broadcaster%20%28C%2B%2B%29)
+创建包
+``` shell
+cd %YOUR_CATKIN_WORKSPACE_HOME%/src
+catkin_create_pkg learning_tf tf roscpp rospy turtlesim  # 创建包learning_tf
+cd %YOUR_CATKIN_WORKSPACE_HOME%/
+catkin_make   # 编译包
+source ./devel/setup.bash # 启动配置
+roscd learning_tf && mkdir src && cd src
+```
+1. 代码
+新建turtle_tf_broadcaster.cpp并复制下面代码
+``` c++
+#include <ros/ros.h>
+#include <tf/transform_broadcaster.h>
+#include <turtlesim/Pose.h>
 
+std::string turtle_name;
 
+void poseCallback(const turtlesim::PoseConstPtr& msg){
+  // 创建TransformBroadcaster对象用于发送transformations
+  static tf::TransformBroadcaster br;  
+  // 创建Transform对象，并复制turtle的2D pose到3D transform
+  tf::Transform transform;  
+  transform.setOrigin( tf::Vector3(msg->x, msg->y, 0.0) );
+  tf::Quaternion q;
+  q.setRPY(0, 0, msg->theta);
+  transform.setRotation(q);  
+  // 通过TransformBroadcaster发送transform需要四个参数
+  // 1. transform本身
+  // 2. 发送transfrom的时间戳
+  // 3. 创建的link的父坐标系名称，此处为“world”
+  // 4. 创建的link的子坐标系名称，此处为turtle自己的名称
+  br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "world", turtle_name));
+  // 注意：senTransform和StampedTransform的父子顺序相反
+}
 
+int main(int argc, char** argv){
+  ros::init(argc, argv, "my_tf_broadcaster");
+  if (argc != 2){ROS_ERROR("need turtle name as argument"); return -1;};
+  turtle_name = argv[1];
 
+  ros::NodeHandle node;
+  ros::Subscriber sub = node.subscribe(turtle_name+"/pose", 10, &poseCallback);
 
+  ros::spin();
+  return 0;
+};
+```
+2. 运行broadcaster
+完成代码后，在CMakeLists.txt文件底部加入下列内容：
+```
+add_executable(turtle_tf_broadcaster src/turtle_tf_broadcaster.cpp)
+target_link_libraries(turtle_tf_broadcaster ${catkin_LIBRARIES})
+```
+编译包
+```
+cd %YOUR_CATKIN_WORKSPACE_HOME%
+caktin_make
+```
+一切正常的话会在devel/lib/learning_tf目录下出现一个二进制文件turtle_tf_broadcaster。接下来创建一个launch文件start_demo.launch并复制下面的内容
+``` xml
+  <launch>
+    <!-- Turtlesim Node-->
+    <node pkg="turtlesim" type="turtlesim_node" name="sim"/>
 
+    <node pkg="turtlesim" type="turtle_teleop_key" name="teleop" output="screen"/>
+    <!-- Axes -->
+    <param name="scale_linear" value="2" type="double"/>
+    <param name="scale_angular" value="2" type="double"/>
+
+    <node pkg="learning_tf" type="turtle_tf_broadcaster"
+          args="/turtle1" name="turtle1_tf_broadcaster" />
+    <node pkg="learning_tf" type="turtle_tf_broadcaster"
+          args="/turtle2" name="turtle2_tf_broadcaster" />
+
+  </launch>
+```
+启动上面创建的turtle broadcaster例子
+`roslaunch learning_tf start_demo.launch`
+3. 检查运行结果
+使用tf_echo工具检查是否turtle pose正在broadcast到tf
+`rosrun tf tf_echo /world /turtle`
+
+### [Writing a tf broadcaster(Python)](http://wiki.ros.org/tf/Tutorials/Writing%20a%20tf%20broadcaster%20%28Python%29)
+创建包
+``` shell
+cd %YOUR_CATKIN_WORKSPACE_HOME%/src
+catkin_create_pkg learning_tf tf roscpp rospy turtlesim  # 创建包learning_tf
+cd %YOUR_CATKIN_WORKSPACE_HOME%/
+catkin_make   # 编译包
+source ./devel/setup.bash # 启动配置
+roscd learning_tf && mkdir nodes && cd nodes
+```
+1. broadcast transforms
+下面将说明如何实现广播坐标系到tf。在本实例中，随着turtle的运动，我们希望广播turtle变化的坐标系。首先在包中创建源文件turtle_tf_broadcaster.py，并复制下列代码
+``` python
+#!/usr/bin/env python  
+import roslib
+roslib.load_manifest('learning_tf')
+import rospy
+
+import tf
+import turtlesim.msg
+
+def handle_turtle_pose(msg, turtlename):
+    br = tf.TransformBroadcaster()
+    br.sendTransform((msg.x, msg.y, 0),
+                     tf.transformations.quaternion_from_euler(0, 0, msg.theta),
+                     rospy.Time.now(),
+                     turtlename,
+                     "world")
+    # turtle pose消息的句柄函数广播它的平移和旋转，并作为从坐标系“world”到坐标系“turtleX”的transform进行发布。
+if __name__ == '__main__':
+    rospy.init_node('turtle_tf_broadcaster')
+    turtlename = rospy.get_param('~turtle') 
+    # 前缀[“~”](http://wiki.ros.org/Names)表示这是一个私有名称，这些私有名称主要用于特定的单个节点的参数，“~”将参数名转换到节点的命名空间。本行程序中指定一个turtle名称，比如，“turtle1”或者“turtle2”
+    rospy.Subscriber('/%s/pose' % turtlename,
+                     turtlesim.msg.Pose,
+                     handle_turtle_pose,
+                     turtlename)
+    # 本节点订阅话题"/turtleX/posse"，接收到新消息后运行handle_turtle_pose函数，接收到的消息作为第一参数
+    rospy.spin()
+```
+2. 运行broadcaster
+创建一个新的文件launch/start_demo.launch，并增加下面代码
+```xml
+  <launch>
+    <!-- Turtlesim Node-->
+    <node pkg="turtlesim" type="turtlesim_node" name="sim"/>
+    <node pkg="turtlesim" type="turtle_teleop_key" name="teleop" output="screen"/>
+
+    <node name="turtle1_tf_broadcaster" pkg="learning_tf" type="turtle_tf_broadcaster.py" respawn="false" output="screen" >
+      <param name="turtle" type="string" value="turtle1" />
+    </node>
+    <node name="turtle2_tf_broadcaster" pkg="learning_tf" type="turtle_tf_broadcaster.py" respawn="false" output="screen" >
+      <param name="turtle" type="string" value="turtle2" /> 
+    </node>
+
+  </launch>
+```
+启动turtle broadcaster
+`roslaunch learning_tf start_demo.launch`
+3. 检查运行结果
+使用tf_echo工具检查是否turtle pose已经广播到tf
+`rosrun tf tf_echo /world /turtle1`
+
+### [Writing a tf listener (C++)](http://wiki.ros.org/tf/Tutorials/Writing%20a%20tf%20listener%20%28C%2B%2B%29)
+1. 代码
+进入前面创建的包,
+`roscd learning_tf`
+创建源文件`src/turtle_tf_listener.cpp`并复制下面代码
+``` c++
+#include <ros/ros.h>
+#include <tf/transform_listener.h> //提供TransformListener
+#include <geometry_msgs/Twist.h>   //
+#include <turtlesim/Spawn.h>
+
+int main(int argc, char** argv){
+  ros::init(argc, argv, "my_tf_listener");
+
+  ros::NodeHandle node;
+
+  ros::service::waitForService("spawn");
+  ros::ServiceClient add_turtle = node.serviceClient<turtlesim::Spawn>("spawn");
+  turtlesim::Spawn srv;
+  add_turtle.call(srv);
+
+  ros::Publisher turtle_vel = node.advertise<geometry_msgs::Twist>("turtle2/cmd_vel", 10);
+
+  tf::TransformListener listener;  // 创建TransformListener对象，一旦listener被创建，它就开始接收tf变换。
+
+  ros::Rate rate(10.0); // 10hz
+  while (node.ok()){
+    tf::StampedTransform transform;
+    try{
+      listener.lookupTransform("/turtle2", "/turtle1", ros::Time(0), transform);
+      // 前两个参数说明需要从/turtle1到/turtle2的变换，
+      // 第3个参数是想要的变换的时间，ros::Time(0)表示最新可以获得的变换，
+      // 第4个参数是存储变换。
+    }
+    catch (tf::TransformException &ex) {
+      ROS_ERROR("%s",ex.what());
+      ros::Duration(1.0).sleep();
+      continue;
+    }
+
+    geometry_msgs::Twist vel_msg;
+    // 变换用于计算/turtle2新的线速度和角速度
+    vel_msg.angular.z = 4.0 * atan2(transform.getOrigin().y(),
+                                    transform.getOrigin().x());
+    vel_msg.linear.x = 0.5 * sqrt(pow(transform.getOrigin().x(), 2) +
+                                  pow(transform.getOrigin().y(), 2));
+    turtle_vel.publish(vel_msg);
+
+    rate.sleep();
+  }
+  return 0;
+};
+```
+2. 运行listener
+打开CMakeLists.txt文件，在末尾加上下面内容
+```
+add_executable(turtle_tf_listener src/turtle_tf_listener.cpp)
+target_link_libraries(turtle_tf_listener ${catkin_LIBRARIES})
+```
+回退到catkin工作目录，编译包
+`catkin_make`
+一切正常的话，在devel/lib/learning_tf文件夹下，出现一个名为turtle_tf_listener的二进制文件。如果存在，把它加入到launch文件中。打开start_demo.launch文件，在launch块中加入node块
+```
+<launch>
+    ...
+    <node pkg="learning_tf" type="turtle_tf_listener" name="listener" />
+    ...
+</launch>
+```
+启动launch文件
+`roslaunch learning_tf start_demo.launch`
+
+### tf命令行工具
+`static_transform_publisher`是用于发布静态transforms的命令行工具。它既可以在命令行中使用，又可以在launch文件中设置静态变换。
+`static_transform_publisher x y z yaw pitch roll frame_id child_frame_id period_in_ms`
+利用x/y/z（单位m）和yaw/pitch/roll（单位radian）发布静态坐标变换到tf，周期单位为ms。
+`static_transform_publisher x y z qx qy qz qw frame_id child_frame_id period_in_ms`
+利用x/y/z（单位m）和四元数发布静态坐标变换到tf，周期单位为ms。
 
 ## [topic_tools/relay](http://wiki.ros.org/topic_tools/relay)
 relay是ROS的一个节点，属于topic_tools包的一部分，它订阅一个话题并将收到的数据再发布给另一个话题，使用规范：

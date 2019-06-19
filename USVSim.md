@@ -448,9 +448,10 @@ uwsim\data\scenesAPAGAR\cirs.xml
       <mesh filename="package://usv_sim/meshes/simpleHull3/backRight.dae" scale="0.21 0.21 0.21"/>
       <mesh filename="package://usv_sim/meshes/simpleHull3/frontLeft.dae" scale="0.21 0.21 0.21"/>
       <mesh filename="package://usv_sim/meshes/simpleHull3/frontRight.dae" scale="0.21 0.21 0.21"/>
-      <xacro:macro name="thruster_link">
-         <mesh filename="package://usv_sim/meshes/simpleHull3/thruster.dae" scale="0.21 0.21 0.21"/>
-      </xacro:macro>
+      <mesh filename="package://usv_sim/meshes/simpleHull3/thruster.dae" scale="0.21 0.21 0.21"/>
+      <mesh filename="package://usv_sim/meshes/simpleHull3/box.dae" scale="0.1 0.1 0.1"/>
+      <plugin name="gazebo_ros_head_hokuyo_controller" filename="libgazebo_ros_gpu_laser.so">
+  
     <plugin name="freefloating_gazebo_control" filename="libfreefloating_gazebo_control.so"/>
   <node name="diffboat_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen" args="-urdf -model diffboat -param diffboat/robot_description -x 240 -y 100 -z 1 -R 0 -P 0 -Y 0"/>
   <param name="buoy1/robot_description" command="$(find xacro)/xacro --inorder $(find usv_sim)/xacro/buoy.xacro"/>
@@ -470,13 +471,6 @@ uwsim\data\scenesAPAGAR\cirs.xml
   <node pkg="tf" type="static_transform_publisher" name="laser_base_tf" args="0.5 0 0.2 0 0 0 1 base_link diffboat/base_laser 10" />
   <node name="odom_relay" type="relay" pkg="topic_tools" args="state /odom" />
   <node name="vel_relay" type="relay" pkg="topic_tools" args="/navigation_velocity_smoother/raw_cmd_vel cmd_vel" />
-  <group ns="thrusters">
-	  <param name="robot_description" command="$(find xacro)/xacro --inorder $(find usv_sim)/urdf/diffboat_dummy.urdf"/>                         
-	  <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" respawn="true" if="$(arg gui)">
-		<param name="use_gui" value="True"/>
-		<remap from="joint_states" to="/$(arg namespace)/thruster_command" />
-		</node>             
-	</group>
 
 
 
@@ -504,7 +498,7 @@ Subscriptions:
  * /buoy3/state [nav_msgs/Odometry]                          <= /gazebo
  * /clock [rosgraph_msgs/Clock]                              <= /gazebo
  * /diffboat/joint_states [sensor_msgs/JointState]           <= /gazebo
- * /diffboat/state [nav_msgs/Odometry]                       <= /gazeb
+ * /diffboat/state [nav_msgs/Odometry]                       <= /gazebo
  * /tf [tf2_msgs/TFMessage]                                  <= /diffboat/odom_base_tf /diffboat/laser_base_tf /gazebo
  * /tf_static [unknown type]                                 <= /
  * /uwsim_marker/update [unknown type]                       <= /
@@ -517,21 +511,21 @@ Services:
 
 Node [/gazebo]
 Publications: 
- * /buoy1/state [nav_msgs/Odometry]
- * /buoy2/state [nav_msgs/Odometry]
- * /buoy3/state [nav_msgs/Odometry]
+ * /buoy1/state [nav_msgs/Odometry]                          => /uwsim
+ * /buoy2/state [nav_msgs/Odometry]                          => /uwsim
+ * /buoy3/state [nav_msgs/Odometry]                          => /uwsim
  * /clock [rosgraph_msgs/Clock]                              => /diffboat/heading_control /diffboat/patrol /diffboat/odom_base_tf /diffboat/pid_control /diffboat/vel_relay /diffboat/laser_base_tf /diffboat/odom_relay
- * /diffboat/joint_states [sensor_msgs/JointState]
- * /diffboat/state [nav_msgs/Odometry]
- * /diffboat/thruster_use [sensor_msgs/JointState]
- * /gazebo/link_states [gazebo_msgs/LinkStates]
- * /gazebo/model_states [gazebo_msgs/ModelStates]
- * /gazebo/parameter_descriptions [dynamic_reconfigure/ConfigDescription]
- * /gazebo/parameter_updates [dynamic_reconfigure/Config]
- * /model/state [nav_msgs/Odometry]
- * /rosout [rosgraph_msgs/Log]
- * /scan [sensor_msgs/LaserScan]
- * /tf [tf2_msgs/TFMessage]
+ * /diffboat/joint_states [sensor_msgs/JointState]           => /diffboat/pid_control /uwsim
+ * /diffboat/state [nav_msgs/Odometry]                       => /diffboat/odom_relay /diffboat/odom_base_tf /diffboat/odom_base_tf /diffboat/heading_control /uwsim
+ * /diffboat/thruster_use [sensor_msgs/JointState]           => None
+ * /gazebo/link_states [gazebo_msgs/LinkStates]              => None
+ * /gazebo/model_states [gazebo_msgs/ModelStates]            => None
+ * /gazebo/parameter_descriptions [dynamic_reconfigure/ConfigDescription]  => None
+ * /gazebo/parameter_updates [dynamic_reconfigure/Config]    => None
+ * /model/state [nav_msgs/Odometry]                          => None
+ * /rosout [rosgraph_msgs/Log]                               => /rosout
+ * /scan [sensor_msgs/LaserScan]                             => None
+ * /tf [tf2_msgs/TFMessage]                                  => /uwsim
 
 Subscriptions: 
  * /buoy1/Surface/link [geometry_msgs/Point]
