@@ -152,13 +152,24 @@ print(end - start)
 0. numpy functions reference
 [Table of Rough MATLAB-NumPy Equivalents](https://docs.scipy.org/doc/numpy/user/numpy-for-matlab-users.html#table-of-rough-matlab-numpy-equivalents)  
 
-| matlab | Numpy | Note |
-| --- | --- | --- |
+matlab | Numpy | Note
+--- | --- | ---
+ndims(a) | ndim(a) 或 a.ndim | 获取数组的维数。
+numel(a) | size(a) 或 a.size | 获取数组的元素个数。
+size(a)  | shape(a) 或 a.shape | 求矩阵的大小。
 a([1:end 1], :) | a[np.r_:len(a),0] | 将数组a的第一行的副本添加到数组尾行下边
 norm(v)	| sqrt(v @ v) or np.linalg.norm(v)	| L2 norm of vector v
 
 [num reference routines](https://docs.scipy.org/doc/numpy/reference/routines.html#routines)
 [some useful Numpy functions](https://docs.scipy.org/doc/numpy/user/quickstart.html)
+
+**[math functons in numpy](https://docs.scipy.org/doc/numpy-1.14.0/reference/generated/)**
+func | note
+---- | ----
+np.sqrt() | 
+np.arctan2() | 
+
+
 1. **list < = > array**
 ``` python
 array1 = np.array(list1)
@@ -184,14 +195,12 @@ result: -3
 3. **np.reshape**
 ``` python
 a = np.array([[1 2 3 4 5], [6 7 8 9 0]]).reshape(-1,2)
-
 [[1 2]
  [3 4]
  [5 6]
  [7 8]
  [9 0]]
-
- ```
+ ``` 
 4. **LA.norm**
 5. __np.dot and *__
 dot()函数是矩阵乘，而*则表示逐个元素相乘
@@ -222,7 +231,7 @@ np.ones((3, 4))
 ```
 12. **索引数组**
 当创建的素组被用来当做其他数组的索引，必须确保为整数，比如[0], 不能是[0.]
-``` python
+```python  
 np.arange(10)
 np.int_([1, 2, 3])
 ```
@@ -310,6 +319,9 @@ print(np.vstack([a1, b1]))
 
 ## import scipy
 
+## python异常
+1. try...except...else...finaly
+2. raise
 
 
 # 数据可视化

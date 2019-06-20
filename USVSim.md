@@ -472,9 +472,36 @@ uwsim\data\scenesAPAGAR\cirs.xml
   <node name="odom_relay" type="relay" pkg="topic_tools" args="state /odom" />
   <node name="vel_relay" type="relay" pkg="topic_tools" args="/navigation_velocity_smoother/raw_cmd_vel cmd_vel" />
 
-
-
 ```
+### gazebo
+#### freefloating_gazebo_control.cpp
+Publications:
+* /diffboat/thruster_use [sensor_msgs/JointState]
+* /diffboat/joint_state [sensor_msgs/JointState]
+Subscriptions:
+* /diffboat/thruster_command [sensor_msgs/JointState]
+* /diffboat/surface/fwd_left [geometry_msgs/Point]
+* /diffboat/surface/fwd_right [geometry_msgs/Point]
+
+#### freefloating_gazebo_fluid.cpp
+Publications:
+* /buoy1/state [nav_msgs/Odometry]
+* /buoy2/state [nav_msgs/Odometry]
+* /buoy3/state [nav_msgs/Odometry]
+* /diffboat/state [nav_msgs/Odometry]
+Subcriptions:
+* /gazebo/current [geometry_msgs/Vector3]
+ * /buoy1/Surface/link [geometry_msgs/Point]
+ * /buoy2/Surface/link [geometry_msgs/Point]
+ * /buoy3/Surface/link [geometry_msgs/Point]
+ * /diffboat/Surface/back_l_link [geometry_msgs/Point]
+ * /diffboat/Surface/back_r_link [geometry_msgs/Point]
+ * /diffboat/Surface/base_link [geometry_msgs/Point]
+ * /diffboat/Surface/center_r_link [geometry_msgs/Point]
+ * /diffboat/Surface/front_l_link [geometry_msgs/Point]
+ * /diffboat/Surface/front_r_link [geometry_msgs/Point]
+ * /diffboat/Surface/fwd_left [geometry_msgs/Point]
+ * /diffboat/Surface/fwd_right [geometry_msgs/Point]
 
 Node [/uwsim]
 Publications: 
@@ -621,7 +648,7 @@ Services:
 
 Node [/diffboat/odom_relay]
 Publications: 
- * /odom [nav_msgs/Odometry]
+ * /odom [nav_msgs/Odometry]                               => None
  * /rosout [rosgraph_msgs/Log]
 
 Subscriptions: 
