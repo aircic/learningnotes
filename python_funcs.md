@@ -149,7 +149,7 @@ print(end - start)
 
 ## numpy的数学函数由c实现，速度比Python math中的函数快10倍##
 ## import numpy as np,from numpy import linalg as LA
-0. numpy functions reference
+### numpy functions reference
 [Table of Rough MATLAB-NumPy Equivalents](https://docs.scipy.org/doc/numpy/user/numpy-for-matlab-users.html#table-of-rough-matlab-numpy-equivalents)  
 
 matlab | Numpy | Note
@@ -169,7 +169,7 @@ func | note
 np.sqrt() | 
 np.arctan2() | 
 
-
+### 创建数组
 1. **list < = > array**
 ``` python
 array1 = np.array(list1)
@@ -179,63 +179,18 @@ ls = [[[0, 2, 4, 6],[1, 3, 5, 7]]]
 print(ls[0])
 print(np.array(ls[0]).reshape(2, -1).T)
 ```
-2. **vector cross-product**
-``` python
-x = [1, 2, 3]
-y = [4, 5, 6]
-np.cross(x, y)
-```
-result: array([-3,  6, -3])
-``` python
-x = [1,2]
-y = [4,5]
-np.cross(x, y)
-```
-result: -3
-3. **np.reshape**
-``` python
-a = np.array([[1 2 3 4 5], [6 7 8 9 0]]).reshape(-1,2)
-[[1 2]
- [3 4]
- [5 6]
- [7 8]
- [9 0]]
- ``` 
-4. **LA.norm**
-5. __np.dot and *__
-dot()函数是矩阵乘，而*则表示逐个元素相乘
-6. **np.zeros((5))与np.zeros((1,5))** 之间的差别np.zeros((5))显示为[0, 0, 0, 0, 0], np.zeros((1,5))显示为[[0, 0, 0, 0, 0]]。它们之间的差别等同与[ ]与[[ ]]之间的差别，前者是一个数组，后者是一个矩阵。
-7. **np.random.random()**
-
-8. **np.sign**
-
-9. **np.argsort()** 
-从小到大排序并返回索引
-10. **两个数组叠加**
-> 垂直叠加
-``` python
-np.concatenate([a, b], axis=0)
-np.vstack([a, b])
-np.r_[a, b]
-```
->水平叠加
-``` python
-np.concatenate([a, b], axis=1)
-np.hstack([a, b])
-np.c_[a, b]
-```
-11. **创建全部相同元素数组**
+2. **创建全部相同元素数组**
 ``` python 
 np.zeros((3, 4))
 np.ones((3, 4))
 ```
-12. **索引数组**
+3. **索引数组**
 当创建的素组被用来当做其他数组的索引，必须确保为整数，比如[0], 不能是[0.]
 ```python  
 np.arange(10)
 np.int_([1, 2, 3])
 ```
-13. **创建元数组**
+4. **创建元数组**
 ``` python
 a = np.arange(4).reshape(-1, 2)
 b = np.arange(4, 10).reshape(-1, 2)
@@ -259,6 +214,132 @@ print(c[1])
     [6 7]
     [8 9]]
 ```
+### [数组索引与切片](https://www.numpy.org.cn/user_guide/numpy_basics/indexing.html)
+数组索引是指使用方括号[]来索引数组值。
+1. 一维数组
+``` python
+x = np.arange(10)
+x[2]       # >>> 2
+x[-2]      # >>> 8
+x[2:5]     # >>> array([2, 3, 4])
+x[:-7]     # >>> array([0, 1, 2])
+x[1:7:2]   # >>> array([1, 3, 5])
+```
+2. 多维数组
+``` python
+x = np.arange(10).reshape(2, 5) # (2, 5) array
+x[1, 3]      # >>> 8
+x[1, -1]     # >>> 9
+# 索引数量小于维度的多维数组，会得到一个子维数组
+x[0]         # >>> array([0, 1, 2, 3, 4])， 
+##[]中的a:b:c表示，索引从a（包含a）开始到b（不包含b）每间隔c个元素取值
+x[2:5:2, ::3] # >>> array([2, 3, 4]) 
+```
+==注：**x[0, 2] = x[0][2]**，第一种情况返回的指向对应的数组内存值，相比，第二种情况效率更低，因为一个新的临时数组在第一个索引后创建了，这个临时数组随后才被2这个数字索引。==
+简而言之，使用双“[]”引用多维数组元素，会在返回的第1个“[]”索引指向的数组上使用第2个“[]”索引，而返回一个元素。
+``` python
+x = np.arange(10).reshape(2, 5) # (2, 5) array
+x[0] == x[:][0] === x[0][:] # 这三种方式得到结果相同，都是一个一维数组，array([0, 1, 2, 3, 4])
+
+```
+
+3. 索引数组
+==一个数组采用索引数组进行取值，返回的是原始数组的副本。==
+一维数组使用一维索引数组得到一个一维数组，，一维数组使用一个二维索引数组得到一个二维数组，得到的数组与索引数组相同纬度。
+``` python
+x = np.arange(10,1,-1)
+x        # >>> array([10,  9,  8,  7,  6,  5,  4,  3,  2])
+x[np.array([3, 3, 1, 8])]     # >>> array([7, 7, 9, 2])
+x[np.array([3, 3, -3, 8])]    # >>> array([7, 7, 4, 2])
+x[np.array([[1, 1], [2, 3]])] # x为一维数组，而索引数组是二维素组，返回一个维数与索引数组相同的数组，
+```
+二维数组
+``` python
+y = np.arange(35).reshape(5,7)
+y[np.array([0, 2, 4]), np.array([0, 1, 2])]  # >>> array([0, 15, 30])
+# 第一个索引数组表示行索引，第二个索引数组表示列索引，两个数组索引的元素数量相同。
+y[np.array([0, 2, 4]), 1]   # >>> array([1, 15 ,29])
+# 索引数组与标量组合
+y[np.array([0, 2, 4])]  # 只有一个一维索引数组时，返回索引数组对应的行的所有元素
+# >>> array([[ 0,  1,  2,  3,  4,  5,  6],
+#            [14, 15, 16, 17, 18, 19, 20],
+#            [28, 29, 30, 31, 32, 33, 34]])
+
+```
+4. 布尔值或掩码索引数组
+布尔数组形状与被索引数组的初始维形状相同，二维被索引数组的返回结果为一维数组。当布尔数组的维数小于被索引数组时，
+``` python
+b = y > 20  # 布尔数组与y的形状相同
+y[b]        # >>> array([21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34])
+b[:, 5]     # >>> array([False, False, False, True, True], dtype=bool)
+y[b[:, 5]]  # 这里第4行和第5行是从索引数组中选择出来的，并组合起来构成一个二维数组.
+# >>> array([[21, 22, 23, 24, 25, 26, 27],
+#            [28, 29, 30, 31, 32, 33, 34]])
+```
+三维被索引数组
+``` python 
+x = np.arange(30).reshape(2,3,5)
+# >>> array([[[ 0,  1,  2,  3,  4],
+#             [ 5,  6,  7,  8,  9],
+#             [10, 11, 12, 13, 14]],
+#            [[15, 16, 17, 18, 19],
+#             [20, 21, 22, 23, 24],
+#             [25, 26, 27, 28, 29]]])
+b = np.array([[True, True, False], [False, True, True]])
+x[b]
+# >>> array([[ 0,  1,  2,  3,  4],
+#            [ 5,  6,  7,  8,  9],
+#            [20, 21, 22, 23, 24],
+#            [25, 26, 27, 28, 29]])
+```
+
+### 数组运算操作
+2. **vector cross-product**
+``` python
+x = [1, 2, 3]
+y = [4, 5, 6]
+np.cross(x, y)
+```
+result: array([-3,  6, -3])
+``` python
+x = [1,2]
+y = [4,5]
+np.cross(x, y)
+```
+result: -3
+3. **np.reshape**
+``` python
+a = np.array([[1 2 3 4 5], [6 7 8 9 0]]).reshape(-1,2)
+[[1 2]
+ [3 4]
+ [5 6]
+ [7 8]
+ [9 0]]
+``` 
+4. **LA.norm**
+5. __np.dot and *__
+dot()函数是矩阵乘，而*则表示逐个元素相乘
+6. **np.zeros((5))与np.zeros((1,5))** 之间的差别np.zeros((5))显示为[0, 0, 0, 0, 0], np.zeros((1,5))显示为[[0, 0, 0, 0, 0]]。它们之间的差别等同与[ ]与[[ ]]之间的差别，前者是一个数组，后者是一个矩阵。
+7. **np.random.random()**
+
+8. **np.sign**
+
+9. **np.argsort()** 
+从小到大排序并返回索引
+10. **两个数组叠加**
+> 垂直叠加
+``` python
+np.concatenate([a, b], axis=0)
+np.vstack([a, b])
+np.r_[a, b]
+```
+>水平叠加
+``` python
+np.concatenate([a, b], axis=1)
+np.hstack([a, b])
+np.c_[a, b]
+```
+
 14. **dtype定义结构数组**
 
 15. **数组shape数学是一个元组（tuple）**

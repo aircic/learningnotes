@@ -1302,8 +1302,11 @@ This package allows you to publish the state of a robot to [tf](http://wiki.ros.
 出现这个问题，可能是因为`<mesh filename="package://your_package/meshes/file.DAE"/>`中yourpackage的路径设置有问题，或者没有启动相应的setup.bash。
 
 
+## Navigation
+### [Setting up your robot using tf](http://wiki.ros.org/navigation/Tutorials/RobotSetup/TF)
+tf manage the transformation between two coordinate frames for us by transform tree. tf assumes that all transforms move from parent to child.
 
-
+### []()
 
 ## USB Camera(UVC)
 
