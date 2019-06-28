@@ -78,6 +78,11 @@ lateral_length
 #### 7. 机器人增加传感器（摄像头）
 #### 8. 使用Rviz可视化机器人信息
 
+### 仿真功能
+1. 如何显示机器人运行轨迹？
+
+
+
 ## [UWSim](http://www.irs.uji.es/uwsim/wiki/index.php?title=Main_Page)
 ### [UWSIM主要特性](http://www.irs.uji.es/uwsim/wiki/index.php?title=Main_characteristics_of_UWSim)
 #### 可配置的环境

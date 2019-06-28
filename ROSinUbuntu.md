@@ -277,6 +277,13 @@ float64 x
 float64 y
 float64 z
 ```
+* [geometry_msgs/PoseArray.msg](http://docs.ros.org/api/geometry_msgs/html/msg/PoseArray.html)
+``` msg
+# An array of pose with a header for global reference
+Header header
+Pose[] poses
+```
+
 * [geometry_msgs/PoseWithCovariance.msg](http://docs.ros.org/api/geometry_msgs/html/msg/PoseWithCovariance.html)
 ``` msg
 # This represents a pose in free space with uncertainty.
@@ -327,6 +334,18 @@ geometry_msgs/Transform transform
 Vector3 force
 Vector3 torque
 ```
+* [nav_msgs/Odometry](http://docs.ros.org/api/nav_msgs/html/msg/Odometry.html)
+```
+# This represents an estimate of a position and velocity in free space.
+# The pose in this message should be specified in the coordinate frame given by header.frame_id.
+# The twist in this message should be specified in the coordinate frame given by the child_frame_id
+Header header
+string child_frame_id
+geometry_msgs/PoseWithCovariance pose
+geometry_msgs/TwistWithCovariance twist
+
+```
+
 * [tf2_msgs/TFMessage.msg](http://docs.ros.org/api/tf2_msgs/html/msg/TFMessage.html)
 ``` msg
 geometry_msgs/TransformStamped[] transforms
@@ -958,6 +977,7 @@ ros::Subscriber sub = nh.subscribe("my_private_topic", ...);
 #### 4. 查验参数是否存在
 `n.hasParam("my_param");`
 ## [rospy](http://wiki.ros.org/rospy/Tutorials)
+### [rospy API index](http://docs.ros.org/api/rospy/html/identifier-index.html)
 ### [Creating a ROS Package](http://wiki.ros.org/ROS/Tutorials/CreatingPackage)
 ### [Writing a Simple Publisher and Subscriber](http://wiki.ros.org/rospy_tutorials/Tutorials/WritingPublisherSubscriber)
 1. Writing the Publisher Node

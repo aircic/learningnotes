@@ -131,7 +131,10 @@ print(c)  # >>> [1, 2, [3, 4]]
 ```
 #
 ## import math
-0. 三角函数
+func | note
+---- | ----
+math.sqrt | 开平方根
+math.pow | 求幂math.pow(a, 2)
 
 
 ## import time
@@ -395,7 +398,7 @@ print(np.vstack([a1, b1]))
       [4]
       [5]]
 ```
-
+判断两个向量是否相近np.allclose
 
 
 ## import scipy
