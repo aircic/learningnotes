@@ -157,3 +157,9 @@ gedit ~/gazebo_plugin_tutorial/hello.world
 ```
 通过gzserver命令打开world文件
 ` gzserver ~/gazebo_plugin_tutorial/hello.world --verbose`
+
+###[gazebo_ros_pkgs中的插件](https://github.com/ros-simulation/gazebo_ros_pkgs/tree/kinetic-devel/gazebo_plugins)
+[激光雷达插件](https://github.com/ros-simulation/gazebo_ros_pkgs/blob/kinetic-devel/gazebo_plugins/include/gazebo_plugins/gazebo_ros_laser.h)
+[超声波插件](https://github.com/ros-simulation/gazebo_ros_pkgs/blob/kinetic-devel/gazebo_plugins/test/test_worlds/gazebo_ros_range.world)
+[IMU插件](https://github.com/ros-simulation/gazebo_ros_pkgs/blob/kinetic-devel/gazebo_plugins/include/gazebo_plugins/gazebo_ros_imu_sensor.h)
+[Hector-gazebo插件](http://wiki.ros.org/hector_gazebo_plugins): it contains a 6wd differential drive plugin, an IMU sensor plugin, an earth magnetic field sensor plugin, a GPS sensor plugin and a sonar ranger plugin.

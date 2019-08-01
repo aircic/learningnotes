@@ -1,4 +1,4 @@
-
+[TOC]
 ## Python Built-in Functions and Models
 [reference](https://docs.python.org/3.6/library/functions.html)
 |	|	| Built-in Functions |	 |	|
@@ -130,11 +130,12 @@ print(c)  # >>> [1, 2, [3, 4]]
 
 ```
 #
-## import math
+## import [math](https://docs.python.org/3.7/library/math.html)
 func | note
 ---- | ----
 math.sqrt | 开平方根
 math.pow | 求幂math.pow(a, 2)
+math.hypot(x,y) | 返回欧几里德范数 sqrt(x*x + y*y)
 
 
 ## import time
@@ -406,6 +407,9 @@ print(np.vstack([a1, b1]))
 ## python异常
 1. try...except...else...finaly
 2. raise
+
+## class
+1. 当一个类定义了`__init__()`方法时，类的实例化操作会自动为新创建的类实例发起调用`__init__()`。
 
 
 # 数据可视化

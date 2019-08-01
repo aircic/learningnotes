@@ -360,8 +360,140 @@ In the example vehicleLibrary.xacro we have created an girona500 configuration e
 #### [XML配置实例：CIRS场景](http://www.irs.uji.es/uwsim/wiki/index.php?title=Configuring_and_creating_scenes)
 uwsim\data\scenesAPAGAR\cirs.xml
 
+## 在usv_sim_lsa中创建usv_gnc包
+``` shell
+cd ~/catkin_ws/src/usv_sim_lsa/
+catkin_create_pkg usv_gnc message_generation std_msgs rospy nav_msgs geometry_msgs sensor_msgs tf 
+cd ~/catkin_ws/src/usv_sim_lsa/usv_gnc/
+mkdir scripts  # 创建scripts目录并将usv_diff_controller.py和usv_wpt_track.py复制到该目录下
+```
+修改usv_gnc/CMakeLists.txt，增加如下内容：
+```
+install(DIRECTORY scripts/
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/scripts
+  FILES_MATCHING PATTERN "*"
+  PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
+              GROUP_READ GROUP_EXECUTE
+              WORLD_READ WORLD_EXECUTE
+)
+```
+在usv_sim_lsa/usv_sim/launch/scenarios_launchs/diffboat_scenario2.launch中修改为
+```xml
+<?xml version="1.0"?>
+<launch>
+
+	<arg name="gui" default="false"/>
+	<arg name="parse" default="false"/>
+	<arg name="rec" default="false"/>
+
+    <!-- spawn uwsim -->
+	<group unless="$(arg parse)">
+		<arg name="disableShaders" default="false"/>
+		<arg name="namespace" default="diffboat"/>  
+    	<arg name="spawnGazebo" default="true"/>
+    	
+	    <!-- Launch Gazebo with empty world -->
+	    <include file="$(find gazebo_ros)/launch/empty_world.launch">
+	        <arg name="use_sim_time" value="true" />
+	        <arg name="debug" value="false" />
+	        <arg name="gui" value="true" />
+	        <arg name="paused" value="true"/>
+	        <arg name="verbose" value="true"/>
+	        <arg name="world_name" value="$(find usv_sim)/world/empty.world"/>
+	    </include>
+
+		<!-- launch uwsim -->
+		<node name="uwsim" pkg="uwsim" type="uwsim" args="$(arg disableShaders) --dataPath $(find usv_sim) --configfile scenes/diffboat_scenario2.xml" respawn="false" required="true"/>
+		
+		<!-- using parser  -->
+		<include file="$(find usv_sim)/launch/scenarios_launchs/diffboat_scenario2_spawner.launch"/>
+		<!-- one include and one node to each vehicle -->
+		<!--
+		<node name="patrol" pkg="usv_navigation" type="patrol_pid_scene2.py" ns="diffboat" unless="$(arg gui)"/>
+		-->
+		<!--usv avoid obstacle-->
+		<!--
+		<node name="avoidobs" pkg="avoid_obs" type="usv_avoidobs.py" ns="diffboat" unless="$(arg gui)"/>
+		-->
+		<node name="avoidobs" pkg="avoid_obs" type="usv_avoidobs2.py" ns="diffboat" unless="$(arg gui)"/>
+		<include file="$(find usv_sim)/launch/models/spawn_diffboat.launch">
+            <arg name="gui" value="$(arg gui)"/>
+            <arg name="spawnGazebo" value="$(arg spawnGazebo)"/>
+            <arg name="namespace" value="$(arg namespace)"/>
+            <arg name="windType" value="global"/>
+            <arg name="waterType" value="global"/>
+        </include>
+		
+		<!-- recording experiment -->
+		<node pkg="rosbag" type="record" name="record_diffboat" args="-O $(find usv_navigation)/bags/diffboat_scenario2.bag /diffboat/state" output="screen" if="$(arg rec)"/>
+
+	</group>
+			
+	<!-- parse launch file -->
+	<group if="$(arg parse)">
+		<node name="scene_to_spawner" pkg="freefloating_gazebo" type="uwsim_scene_to_gazebo_spawner.py" args="$(find usv_sim)/launch/scenarios_launchs/diffboat_scenario2.launch" output="screen" required="true"/>
+	</group>
+
+</launch>
+```
+在usv_sim_lsa/usv_sim/launch/models/spawn_diffboat.launch中修改为
+```xml
+<?xml version="1.0"?>
+<launch>
+
+	<arg name="gui" default="false"/>
+    <arg name="parse" default="false"/>  
+ 	<arg name="namespace" default="diffboat"/>  
+    <arg name="posX" default="0"/>
+    <arg name="posY" default="0"/>
+    <arg name="posZ" default="0"/>
+    <arg name="spawnGazebo" default="false"/>
+    <arg name="windType" default="global"/>
+    <arg name="waterType" default="global"/>
+    
+	<!-- spawn in Gazebo with GUI -->
+	<group ns="$(arg namespace)" unless="$(arg parse)">
+		<param name="robot_description" command="$(find xacro)/xacro $(find usv_sim)/xacro/diffboat.xacro waterType:=$(arg waterType) windType:=$(arg windType)"/>
+		<node unless="$(arg spawnGazebo)" name="spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen" args="-urdf -model diffboat -param robot_description -x $(arg posX) -y $(arg posY) -z $(arg posZ) -R 0 -P 0 -Y 0"/>
+
+		<!-- Load controller configurations (vehicle and arm) from YAML file to parameter server -->
+		<rosparam file="$(find usv_sim)/config/diffboat.yaml" command="load"/>
+
+		<!-- Launch control -->
+		<node name="pid_control" pkg="freefloating_gazebo" type="pid_control" output="screen" respawn="true"/>
+		<!--<node name="control_vel" pkg="usv_base_ctrl" type="boat_diff_vel_ctrl.py"  unless="$(arg gui)"/>-->
+		<!--
+        <node name="heading_control" pkg="usv_base_ctrl" type="diff_control_heading.py" unless="$(arg gui)" output="screen" />
+		-->
+		<node name="usv_wpt_track" pkg="usv_gnc" type="usv_wpt_track.py" unless="$(arg gui)" output="screen" />
+		<node name="usv_diff_controller" pkg="usv_gnc" type="usv_diff_controller.py" unless="$(arg gui)" output="screen" />
+		<node name="odom_base_tf" pkg="usv_tf" type="world_tf_broadcaster.py"/> 
+		<node pkg="tf" type="static_transform_publisher" name="laser_base_tf" args="0.5 0 0.2 0 0 0 1 base_link diffboat/base_laser 10" />
+
+		<node name="odom_relay" type="relay" pkg="topic_tools" args="state /odom" />
+		<node name="vel_relay" type="relay" pkg="topic_tools" args="/navigation_velocity_smoother/raw_cmd_vel cmd_vel" />
 
 
+		<!-- GUI interface to control joints -->
+			<node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" if="$(arg gui)"/>             
+		<!-- GUI interface to control thrusters -->
+			<group ns="thrusters">
+			     <param name="robot_description" command="$(find xacro)/xacro --inorder $(find usv_sim)/urdf/diffboat_dummy.urdf"/>                         
+			     <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" respawn="true" if="$(arg gui)">
+			     <param name="use_gui" value="True"/>
+			     <remap from="joint_states" to="/$(arg namespace)/thruster_command" />
+			     </node>             
+			</group>
+
+	</group>
+</launch>
+```
+
+``` shell
+cd ~/catkin_ws/
+catkin_make_isolated --install
+source install_isolated/setup.bash
+```
 
 
 
@@ -482,7 +614,7 @@ uwsim\data\scenesAPAGAR\cirs.xml
 #### freefloating_gazebo_control.cpp
 Publications:
 * /diffboat/thruster_use [sensor_msgs/JointState]
-* /diffboat/joint_state [sensor_msgs/JointState]
+* /diffboat/joint_states [sensor_msgs/JointState]
 Subscriptions:
 * /diffboat/thruster_command [sensor_msgs/JointState]
 * /diffboat/surface/fwd_left [geometry_msgs/Point]
@@ -573,7 +705,7 @@ Subscriptions:
  * /diffboat/Surface/fwd_left [geometry_msgs/Point]
  * /diffboat/Surface/fwd_right [geometry_msgs/Point]
  * /diffboat/joint_command [sensor_msgs/JointState]          <= /diffboat/pid_control
- * /diffboat/thruster_command [sensor_msgs/JointState]       <= /diffboat/heading_control>
+ * /diffboat/thruster_command [sensor_msgs/JointState]       <= /diffboat/heading_control
  * /gazebo/current [unknown type]
  * /gazebo/gazebocurrent [unknown type]
  * /gazebo/set_link_state [unknown type]

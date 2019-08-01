@@ -259,14 +259,14 @@ Quaternion orientation
 ```
 * [geometry_msgs/Twist.msg](http://docs.ros.org/api/geometry_msgs/html/msg/Twist.html)
 ``` msg
-# This expresses velocity in free sapce broken into its linear and angular parts.
+# This expresses velocity in free space broken into its linear and angular parts.
 
 geometry_msgs/Vector3 linear
 geometry_msgs/Vector3 angular
 ```
 * [geometry_msgs/Vector3.msg](http://docs.ros.org/api/geometry_msgs/html/msg/Vector3.html)
 ``` msg
-# This represents a vector in free sapce.
+# This represents a vector in free space.
 # It is only meant to represent a direction. Therefore, it does not
 # make sense to apply a translation to it (e.g. when applying a generic 
 # rigid transformation to a Vector3, tf2 will only apply the rotation).
@@ -425,6 +425,64 @@ geometry_msgs/Vector3 angular_velocity
 float64[9] angular_velocity_covariance # Row major about x, y, z axes
 geometry_msgs/Vector3 linear_acceleratin
 float64[9] linear_acceleration_covariance # Row major about x, y, z axes
+```
+* [sensor_msgs/NavSatFix](http://docs.ros.org/api/sensor_msgs/html/msg/NavSatFix.html)
+``` msg
+# Navigation Satellite fix for any Global Navigation Satellite System
+# Specified using the WGS-84 reference ellipsoid
+# header.stamp specifies the ROS time for this measurement (the 
+#              corresponding satellite time may be reported using the 
+#              sensor_msgs/TimeReference message).
+# header.frame_id is the frame of reference reported by the satellite
+#              receiver, usually the location of the antenna. This is a 
+#              Euclidean frame relative to the vehicle, not a reference ellipsoid.
+Header header
+# satellite fix status information
+NavSatStatus status
+# Latitude, [degrees]. Positive is north of equator; negative is south.
+float64 latitude
+# Longitude [degrees]. Positive is east of prime meridian; negative is west.
+float64 longitude
+# Altitude [m]. Positive is above the WGS-84 ellipsoid(quiet NaN if no altitude is available).
+float64 altitude
+# Position covariance [m^2] defined relative to a tangential plane
+# through the reported position. The components are East, North, 
+# and Up (ENU), in row-major order.
+float64[9] position_covariance
+# If the covariance of the fix is known, fill it in completely. If the 
+# GPS receiver provides the variance of each measurement, put them along
+# the diagonal. If only Dilution of Precisin is available,
+# estimate an approxiamte covariance from that.
+uint8 COVARIANCE_TYPE_UNKNOWN = 0
+uint8 COVARIANCE_TYPE_APPROXIMATED = 1
+uint8 COVARIANCE_TYPE_DIAGONAL_KNOWN = 2
+uint8 COVARIANCE_TYPE_KNOWN = 3
+uint8 position_covariance_type
+```
+* [sensor_msgs/NavSatStatus](http://docs.ros.org/api/sensor_msgs/html/msg/NavSatStatus.html)
+``` msg
+# Navigation Satellite fix status for any Global Navigation Satellite System
+
+# Whether to output an augmented fix is determined by both the fix
+# type and the last time differential corrections were received.  A
+# fix is valid when status >= STATUS_FIX.
+
+int8 STATUS_NO_FIX =  -1        # unable to fix position
+int8 STATUS_FIX =      0        # unaugmented fix
+int8 STATUS_SBAS_FIX = 1        # with satellite-based augmentation
+int8 STATUS_GBAS_FIX = 2        # with ground-based augmentation
+
+int8 status
+
+# Bits defining which Global Navigation Satellite System signals were
+# used by the receiver.
+
+uint16 SERVICE_GPS =     1
+uint16 SERVICE_GLONASS = 2
+uint16 SERVICE_COMPASS = 4      # includes BeiDou.
+uint16 SERVICE_GALILEO = 8
+
+uint16 service
 ```
 * [nav_msgs/Odometry](http://docs.ros.org/api/nav_msgs/html/msg/Odometry.html)
 ``` msg
@@ -997,7 +1055,8 @@ from std_msgs.msg import String
 
 def talker():
     pub = rospy.Publisher('chatter', String, queue_size=10) # 声明节点发布的话题名称“chatter”，类型为std_msgs.msg.String，
-    rospy.init_node('talker', anonymous=True)               # 初始化节点名称，才能启动与master节点的通信。更多内容参考[Initialization and Shutdown - Initializing your ROS Node](http://wiki.ros.org/rospy/Overview/Initialization%20and%20Shutdown#Initializing_your_ROS_Node)
+    rospy.init_node('talker', anonymous=True)               # 初始化节点名称，才能启动与master节点的通信。
+                                                            # 更多内容参考[Initialization and Shutdown - Initializing your ROS Node](http://wiki.ros.org/rospy/Overview/Initialization%20and%20Shutdown#Initializing_your_ROS_Node)
     rate = rospy.Rate(10) # 10hz                            # 创建Rate对象速率，配合sleep()实现期望的速率执行循环。
     while not rospy.is_shutdown():                          # 标准的循环结构
         hello_str = "hello world %s" % rospy.get_time()
@@ -1317,10 +1376,22 @@ This package contains a tool for setting and publishing joint state values for g
 ## [robot_state_publisher](http://wiki.ros.org/robot_state_publisher)
 This package allows you to publish the state of a robot to [tf](http://wiki.ros.org/tf). Once the state gets published, it is available to all components in the system that also use tf. The package takes the joint angles of the robot as input and publishes the 3D poses of the robot links, using a kinematic tree model of the robot. The package can both be used as a library and as a ROS node. This package has been well tested and the code is stable.
 
-## problems
+## [ROS logging with rospy](http://wiki.ros.org/rospy_tutorials/Tutorials/Logging)
+```
+rospy.logdebug(msg, *args)
+rospy.logwarn(msg, *args)
+rospy.loginfo(msg, *args)
+rospy.logerr(msg, *args)
+rospy.logfatal(msg, *args)
+```
+
+## Problems
 1. "Package [] does not have a path"
 出现这个问题，可能是因为`<mesh filename="package://your_package/meshes/file.DAE"/>`中yourpackage的路径设置有问题，或者没有启动相应的setup.bash。
-
+2. python实现ROS包中的脚步，出现： /usr/bin/env： ‘python\r’: No such file or directory
+[参考](https://blog.csdn.net/qq_34654240/article/details/79738138)
+原因`#!/usr/bin/env python`在Ubuntu中会变成`#!/usr/bin/env python\r`，而\r会被shell当成参数。所以出现该错误提示。解决方法：`vim file.py` 输入`:set ff=unix`再输入`:wq`保存。
+==PS：python程序在win7开发，运行时在Ubuntu上运行。在不同的平台上换行符不一致导致，`:set ff=unix`表示使用UNIX换行符。UNIX换行符用`<LF>`一个字符表示行尾，Apple用`<CR>`表示行尾，Win用`<CR><LF>`表示行尾。==
 
 ## Navigation
 ### [Setting up your robot using tf](http://wiki.ros.org/navigation/Tutorials/RobotSetup/TF)
